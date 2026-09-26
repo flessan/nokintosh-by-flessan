@@ -224,7 +224,7 @@ export class GLRenderer {
     const pm = this.progMain;
     gl.useProgram(pm);
     this.bind(0, this.srcTex, pm, "u_tex");
-    this.bind(1, this.bloomA.tex, pm, "u_bloom");
+    this.bind(1, this.bloomA.tex, pm, "u_bloomTex");
     gl.uniform2f(this.loc(pm, "u_texel"), 1 / w, 1 / h);
     gl.uniform1f(this.loc(pm, "u_scale"), scale);
     gl.uniform1f(this.loc(pm, "u_seed"), 11.37);
