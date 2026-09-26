@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { LoadedPhoto } from "../engine/image";
 import { createRenderer, type Renderer } from "../engine/renderer";
-import type { EffectParams } from "../engine/types";
+import type { EffectParams, FilterMode } from "../engine/types";
 
 /** Longest edge of the live preview buffer. Export always uses full size. */
 const PREVIEW_MAX = 1200;
@@ -56,6 +56,7 @@ export function usePreview(
   photo: LoadedPhoto | null,
   params: EffectParams,
   presetId: string,
+  filter: FilterMode,
   showOriginal: boolean,
   cacheCustom: boolean,
 ) {
@@ -68,6 +69,7 @@ export function usePreview(
   const paramsRef = useRef(params);
   const originalRef = useRef(showOriginal);
   const presetRef = useRef(presetId);
+  const filterRef = useRef(filter);
 
   // WeakMap prevents cached pixels from keeping old photo objects alive after
   // a new photo is opened or the current photo is closed.
@@ -85,6 +87,7 @@ export function usePreview(
   paramsRef.current = params;
   originalRef.current = showOriginal;
   presetRef.current = presetId;
+  filterRef.current = filter;
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -158,6 +161,7 @@ export function usePreview(
       presetRef.current,
       bw,
       bh,
+      filterRef.current,
       paramsKey(paramsRef.current),
     ].join("|");
   }
@@ -260,7 +264,7 @@ export function usePreview(
 
     const t0 = performance.now();
     try {
-      r.render(paramsRef.current);
+      r.render(paramsRef.current, filterRef.current);
 
       if (key) {
         const ctx = canvas.getContext("2d");
@@ -307,7 +311,7 @@ export function usePreview(
   useEffect(() => {
     schedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, presetId, box.w, box.h, showOriginal, photo, cacheCustom]);
+  }, [params, presetId, filter, box.w, box.h, showOriginal, photo, cacheCustom]);
 
   useEffect(() => {
     return () => {
