@@ -3,7 +3,13 @@ import type { LoadedPhoto } from "../engine/image";
 import { applyFrame } from "../engine/frame";
 import { applyCanvasTransform, type ImageTransform } from "../engine/transform";
 import { createRenderer, type Renderer } from "../engine/renderer";
-import type { EffectParams, FilterMode, FrameMode } from "../engine/types";
+import type {
+  EffectParams,
+  FilterMode,
+  FrameMode,
+  SpecialEffectState,
+} from "../engine/types";
+import { applySpecialEffect, specialEffectKey } from "../engine/specialEffect";
 
 /** Longest edge of the live preview buffer. Export always uses full size. */
 const PREVIEW_MAX = 1200;
@@ -61,6 +67,7 @@ export function usePreview(
   filter: FilterMode,
   frame: FrameMode,
   transform: ImageTransform,
+  specialEffect: SpecialEffectState,
   showOriginal: boolean,
   cacheCustom: boolean,
 ) {
@@ -76,6 +83,7 @@ export function usePreview(
   const filterRef = useRef(filter);
   const frameRef = useRef(frame);
   const transformRef = useRef(transform);
+  const specialEffectRef = useRef(specialEffect);
 
   // WeakMap prevents cached pixels from keeping old photo objects alive after
   // a new photo is opened or the current photo is closed.
@@ -96,6 +104,7 @@ export function usePreview(
   filterRef.current = filter;
   frameRef.current = frame;
   transformRef.current = transform;
+  specialEffectRef.current = specialEffect;
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -174,6 +183,7 @@ export function usePreview(
       transformRef.current.mirror ? "mh" : "m0",
       transformRef.current.flipVertical ? "fv" : "f0",
       paramsKey(paramsRef.current),
+      specialEffectKey(specialEffectRef.current),
     ].join("|");
   }
 
@@ -277,6 +287,7 @@ export function usePreview(
     try {
       r.render(paramsRef.current, filterRef.current);
       applyCanvasTransform(canvas, transformRef.current);
+      applySpecialEffect(canvas, specialEffectRef.current);
       applyFrame(canvas, frameRef.current);
 
       if (key) {
@@ -330,6 +341,8 @@ export function usePreview(
     filter,
     frame,
     transform.mirror,
+    specialEffect,
+
     transform.flipVertical,
     box.w,
     box.h,
