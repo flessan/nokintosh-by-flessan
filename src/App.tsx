@@ -244,12 +244,15 @@ export default function App() {
   const detail = photo
     ? `${photo.width}x${photo.height}`
     : "no image";
+  const previewName = PRESET_MAP[presetId]?.name ?? "Custom";
   const previewStatus =
     info.phase === "loading"
-      ? "[Loading] " + (PRESET_MAP[presetId]?.name ?? "Preview")
+      ? "[Loading] " + previewName
       : info.phase === "cached"
-        ? "[Cached] " + (PRESET_MAP[presetId]?.name ?? "Preview")
-        : hint ?? editor.status;
+        ? "[Cached] " + previewName
+        : info.phase === "rendered"
+          ? "Preview ready // " + previewName
+          : hint ?? editor.status;
   const engineLabel =
     info.engine === "webgl2"
       ? `GPU  ${info.previewWidth}x${info.previewHeight}  ${info.lastRenderMs.toFixed(1)}ms`
@@ -404,6 +407,8 @@ export default function App() {
                     onCommitStart={editor.beginAdjust}
                     onCommitEnd={editor.endAdjust}
                     onHint={setHint}
+                    onApply={editor.applyChanges}
+                    canApply={editor.hasUnappliedChanges}
                   />
                   <div className="mt-2 flex gap-2 px-[5px] pb-1">
                     <Button className="flex-1" onClick={editor.resetAll}>
