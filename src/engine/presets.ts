@@ -20,6 +20,7 @@ function preset(
   note: string,
   params: Partial<EffectParams>,
   filter: FilterMode = "none",
+  frame: "none" | "collage" = "none",
 ): Preset {
   return {
     id,
@@ -27,6 +28,7 @@ function preset(
     note,
     params: { ...DEFAULT_PARAMS, ...params },
     filter,
+    frame,
   };
 }
 
@@ -108,21 +110,10 @@ export const PRESETS: Preset[] = [
   preset(
     "collage",
     "Collage",
-    "Soft consumer-digital base with slightly lifted colour and gentle texture.",
-    {
-      grain: 0.24,
-      jpeg: 0.28,
-      colorShift: 0.42,
-      vignette: 0.12,
-      softness: 0.18,
-      sharpen: 0.3,
-      bloom: 0.1,
-      aberration: 0.1,
-      fade: 0.08,
-      contrast: 0.04,
-      saturation: 0.16,
-      temperature: 0.08,
-    },
+    "Single-photo collage frame: clean paper border and printed-card presentation.",
+    {},
+    "none",
+    "collage",
   ),
   preset(
     "blur-pixelate",
