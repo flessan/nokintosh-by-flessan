@@ -24,6 +24,7 @@ const REPO_URL = "https://github.com/flessan/nokintosh-by-flessan";
 export default function App() {
   const editor = useEditor();
   const [showOriginal, setShowOriginal] = useState(false);
+  const [zoom, setZoom] = useState(1);
   const [dragOver, setDragOver] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const [tab, setTab] = useState<"presets" | "effects">("presets");
@@ -134,6 +135,26 @@ export default function App() {
   const quickExport = useCallback(() => {
     void runExport({ ...exportOpts, format: "avif" });
   }, [exportOpts, runExport]);
+
+  const changeZoom = useCallback((value: number) => {
+    const next = Math.min(4, Math.max(1, Math.round(value * 4) / 4));
+    setZoom(next);
+  }, []);
+
+  const toggleZoom = useCallback(() => {
+    setZoom((current) => (current === 1 ? 2 : 1));
+  }, []);
+
+  const zoomByWheel = useCallback((delta: number) => {
+    setZoom((current) => {
+      const direction = delta > 0 ? -0.25 : 0.25;
+      return Math.min(4, Math.max(1, Math.round((current + direction) * 4) / 4));
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!photo) setZoom(1);
+  }, [photo]);
 
   // ---------- keyboard ----------
   useEffect(() => {
@@ -365,6 +386,10 @@ export default function App() {
               dragOver={dragOver}
               showOriginal={showOriginal}
               loading={editor.loading}
+              zoom={zoom}
+              onZoomChange={changeZoom}
+              onToggleZoom={toggleZoom}
+              onZoomWheel={zoomByWheel}
               onOpen={pickFile}
               onSample={() => void editor.openSample()}
             />
