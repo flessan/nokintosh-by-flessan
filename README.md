@@ -15,7 +15,7 @@ Open → Add photo → Pick a look → Adjust a few controls → Export AVIF
 ## Features
 
 - WebGL2 rendering pipeline with a Canvas 2D fallback
-- Data-driven preset library (22 looks)
+- Data-driven preset library (27 looks)
 - 14 controls grouped as Core / Optics / Tone
 - File picker, drag & drop and clipboard paste input
 - Hold-to-compare against the original, explicit Apply workflow, plus undo / redo and reset
@@ -36,7 +36,7 @@ Requires Node 18+.
 
 ## Editing workflow
 
-Preset selection and slider changes are live draft edits. Press **Apply** (or `Ctrl+Enter`) to commit the current combination as one undoable history step. This lets a preset and several manual adjustments travel together through undo/redo. Previously rendered preset combinations are kept in a small per-photo LRU cache for fast revisits.
+Preset selection, filter selection and slider changes are live draft edits. Press **Apply** (or `Ctrl+Enter`) to commit the current combination as one undoable history step. This lets a preset and several manual adjustments travel together through undo/redo. Previously rendered preset combinations are kept in a small per-photo LRU cache for fast revisits. Generic filters are grouped under Filters, while small-sensor/early-phone profiles are grouped under Camera 2.
 
 ## Architecture
 
