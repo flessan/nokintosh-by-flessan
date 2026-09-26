@@ -48,7 +48,7 @@ export function PresetList({
         key={p.id}
         type="button"
         role={nested ? "menuitem" : undefined}
-        className={"ui-item text-[12px] " + (nested ? "pl-6" : "")}
+        className={"ui-item text-[12px] " + (nested ? "pl-[18px]" : "")}
         style={active ? { backgroundColor: "var(--sel)", color: "#ffffff" } : undefined}
         aria-pressed={selected}
         onClick={() => {
@@ -82,7 +82,7 @@ export function PresetList({
     items: typeof FILTER_PRESETS,
     selected: boolean,
   ) => (
-    <div className="relative">
+    <div className="relative" onMouseEnter={() => setOpenMenu(menu)}>
       <button
         type="button"
         className="ui-item text-[12px]"
@@ -111,15 +111,21 @@ export function PresetList({
         </span>
       </button>
 
-      {openMenu === menu && (
+      <div
+        className={
+          "overflow-hidden transition-[max-height,opacity] duration-150 ease-out " +
+          (openMenu === menu ? "max-h-[420px] opacity-100" : "pointer-events-none max-h-0 opacity-0")
+        }
+        aria-hidden={openMenu !== menu}
+      >
         <div
-          className="bevel-raised absolute left-full top-0 z-50 min-w-[180px] p-[2px]"
+          className="bevel-sunken mx-[3px] my-[2px] bg-[color:var(--face)] p-[2px]"
           role="menu"
           aria-label={label}
         >
           {items.map((item) => renderItem(item, true))}
         </div>
-      )}
+      </div>
     </div>
   );
 
