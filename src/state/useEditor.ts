@@ -8,13 +8,14 @@ import {
   type LoadedPhoto,
 } from "../engine/image";
 import { paramsEqual, PRESET_MAP, PRESETS } from "../engine/presets";
-import { DEFAULT_PARAMS, type EffectParams, type FilterMode, type ParamId } from "../engine/types";
+import { DEFAULT_PARAMS, type EffectParams, type FilterMode, type FrameMode, type ParamId } from "../engine/types";
 import { IDENTITY_TRANSFORM, sameTransform, type ImageTransform } from "../engine/transform";
 
 interface Snapshot {
   params: EffectParams;
   presetId: string;
   filter: FilterMode;
+  frame: FrameMode;
   transform: ImageTransform;
 }
 
@@ -23,6 +24,8 @@ const MAX_HISTORY = 40;
 const INITIAL_PRESET = PRESETS.find((preset) => preset.id === "ccd") ?? PRESETS[0];
 const INITIAL_PARAMS = { ...INITIAL_PRESET.params };
 const INITIAL_PRESET_ID = INITIAL_PRESET.id;
+const INITIAL_FILTER = INITIAL_PRESET.filter ?? "none";
+const INITIAL_FRAME = INITIAL_PRESET.frame ?? "none";
 
 export function useEditor() {
   const [photo, setPhoto] = useState<LoadedPhoto | null>(null);
@@ -30,14 +33,16 @@ export function useEditor() {
   // params/presetId are the live draft shown in the preview.
   const [params, setParams] = useState<EffectParams>({ ...INITIAL_PARAMS });
   const [presetId, setPresetId] = useState<string>(INITIAL_PRESET_ID);
-  const [filter, setFilter] = useState<FilterMode>("none");
+  const [filter, setFilter] = useState<FilterMode>(INITIAL_FILTER);
+  const [frame, setFrame] = useState<FrameMode>(INITIAL_FRAME);
   const [transform, setTransform] = useState<ImageTransform>({ ...IDENTITY_TRANSFORM });
 
   // applied* are the last explicitly committed settings. Apply turns this
   // draft into one undoable history step.
   const [appliedParams, setAppliedParams] = useState<EffectParams>({ ...INITIAL_PARAMS });
   const [appliedPresetId, setAppliedPresetId] = useState<string>(INITIAL_PRESET_ID);
-  const [appliedFilter, setAppliedFilter] = useState<FilterMode>("none");
+  const [appliedFilter, setAppliedFilter] = useState<FilterMode>(INITIAL_FILTER);
+  const [appliedFrame, setAppliedFrame] = useState<FrameMode>(INITIAL_FRAME);
   const [appliedTransform, setAppliedTransform] = useState<ImageTransform>({ ...IDENTITY_TRANSFORM });
 
   const [status, setStatus] = useState("Ready. Open a photo to begin.");
@@ -62,6 +67,7 @@ export function useEditor() {
         params: { ...snap.params },
         presetId: snap.presetId,
         filter: snap.filter,
+        frame: snap.frame,
         transform: { ...snap.transform },
       });
       if (past.current.length > MAX_HISTORY) past.current.shift();
@@ -130,6 +136,7 @@ export function useEditor() {
     setParams({ ...preset.params });
     setPresetId(id);
     setFilter(preset.filter ?? "none");
+    setFrame(preset.frame ?? "none");
     setStatus("[Loading] " + preset.name + " // " + preset.note);
   }, []);
 
@@ -144,6 +151,7 @@ export function useEditor() {
       !paramsEqual(params, appliedParams) ||
       presetId !== appliedPresetId ||
       filter !== appliedFilter ||
+      frame !== appliedFrame ||
       !sameTransform(transform, appliedTransform);
 
     if (!dirty) {
@@ -155,11 +163,13 @@ export function useEditor() {
       params: appliedParams,
       presetId: appliedPresetId,
       filter: appliedFilter,
+      frame: appliedFrame,
       transform: appliedTransform,
     });
     setAppliedParams({ ...params });
     setAppliedPresetId(presetId);
     setAppliedFilter(filter);
+    setAppliedFrame(frame);
     setAppliedTransform({ ...transform });
 
     const name = PRESET_MAP[presetId]?.name ?? "Custom";
@@ -201,6 +211,7 @@ export function useEditor() {
       !paramsEqual(params, DEFAULT_PARAMS) ||
       presetId !== "none" ||
       filter !== "none" ||
+      frame !== "none" ||
       !sameTransform(transform, IDENTITY_TRANSFORM);
 
     if (!dirty) {
@@ -212,16 +223,19 @@ export function useEditor() {
       params: appliedParams,
       presetId: appliedPresetId,
       filter: appliedFilter,
+      frame: appliedFrame,
       transform: appliedTransform,
     });
     const reset = { ...DEFAULT_PARAMS };
     setParams(reset);
     setPresetId("none");
     setFilter("none");
+    setFrame("none");
     setTransform({ ...IDENTITY_TRANSFORM });
     setAppliedParams({ ...reset });
     setAppliedPresetId("none");
     setAppliedFilter("none");
+    setAppliedFrame("none");
     setAppliedTransform({ ...IDENTITY_TRANSFORM });
     setStatus("All effects reset.");
   }, [
@@ -242,11 +256,13 @@ export function useEditor() {
       !paramsEqual(params, appliedParams) ||
       presetId !== appliedPresetId ||
       filter !== appliedFilter ||
+      frame !== appliedFrame ||
       !sameTransform(transform, appliedTransform)
     ) {
       setParams({ ...appliedParams });
       setPresetId(appliedPresetId);
       setFilter(appliedFilter);
+      setFrame(appliedFrame);
       setTransform({ ...appliedTransform });
       setStatus("Draft changes undone.");
       return;
@@ -259,6 +275,7 @@ export function useEditor() {
       params: { ...appliedParams },
       presetId: appliedPresetId,
       filter: appliedFilter,
+      frame: appliedFrame,
       transform: { ...appliedTransform },
     });
 
@@ -266,14 +283,16 @@ export function useEditor() {
     setParams(restored);
     setPresetId(snap.presetId);
     setFilter(snap.filter);
+    setFrame(snap.frame);
     setAppliedParams({ ...restored });
     setAppliedPresetId(snap.presetId);
     setAppliedFilter(snap.filter);
+    setAppliedFrame(snap.frame);
     setTransform({ ...snap.transform });
     setAppliedTransform({ ...snap.transform });
     setStatus("Undo.");
     setHistoryTick((t) => t + 1);
-  }, [appliedParams, appliedPresetId, appliedFilter, appliedTransform, filter, params, presetId, transform]);
+  }, [appliedParams, appliedPresetId, appliedFilter, appliedFrame, appliedTransform, filter, frame, params, presetId, transform]);
 
   const redo = useCallback(() => {
     // If the user is sitting on a draft, redo first has no committed meaning.
@@ -281,6 +300,7 @@ export function useEditor() {
       !paramsEqual(params, appliedParams) ||
       presetId !== appliedPresetId ||
       filter !== appliedFilter ||
+      frame !== appliedFrame ||
       !sameTransform(transform, appliedTransform)
     ) {
       setStatus("Apply the current draft before using Redo.");
@@ -294,6 +314,7 @@ export function useEditor() {
       params: { ...appliedParams },
       presetId: appliedPresetId,
       filter: appliedFilter,
+      frame: appliedFrame,
       transform: { ...appliedTransform },
     });
 
@@ -301,19 +322,22 @@ export function useEditor() {
     setParams(restored);
     setPresetId(snap.presetId);
     setFilter(snap.filter);
+    setFrame(snap.frame);
     setAppliedParams({ ...restored });
     setAppliedPresetId(snap.presetId);
     setAppliedFilter(snap.filter);
+    setAppliedFrame(snap.frame);
     setTransform({ ...snap.transform });
     setAppliedTransform({ ...snap.transform });
     setStatus("Redo.");
     setHistoryTick((t) => t + 1);
-  }, [appliedParams, appliedPresetId, params, presetId]);
+  }, [appliedParams, appliedPresetId, appliedFilter, appliedFrame, params, presetId, filter, frame, transform]);
 
   const hasUnappliedChanges =
     !paramsEqual(params, appliedParams) ||
     presetId !== appliedPresetId ||
     filter !== appliedFilter ||
+    frame !== appliedFrame ||
     !sameTransform(transform, appliedTransform);
 
   return {
@@ -321,6 +345,7 @@ export function useEditor() {
     params,
     presetId,
     filter,
+    frame,
     transform,
     status,
     loading,
@@ -329,6 +354,7 @@ export function useEditor() {
       !paramsEqual(params, appliedParams) ||
       presetId !== appliedPresetId ||
       filter !== appliedFilter ||
+      frame !== appliedFrame ||
       !sameTransform(transform, appliedTransform),
     canRedo: future.current.length > 0,
     historyTick,
