@@ -258,6 +258,40 @@ input[type="range"].ui-range::-moz-range-thumb {
   }
 }
 
+/* ---------- title bar actions ---------- */
+.github-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  margin-left: 2px;
+  padding: 0;
+  color: #ffffff;
+  background: transparent;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.github-link svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.github-link:hover,
+.github-link:focus-visible {
+  color: #ffffff;
+  background: #153b7a;
+  border-color: #8aa4d6;
+  outline: 1px dotted #ffffff;
+  outline-offset: -3px;
+}
+
 /* ---------- misc ---------- */
 .workspace {
   background-color: #6e6e6e;
