@@ -122,6 +122,32 @@ export class CanvasRenderer implements Renderer {
     const scale = Math.max(0.25, w / 1280);
     const wc = this.workCtx;
 
+    // Neutral mode should be instant. Apart from being cheaper, this makes
+    // "Original" a reliable baseline for slow/mobile Canvas2D implementations.
+    const neutral =
+      p.grain === 0 &&
+      p.jpeg === 0 &&
+      p.colorShift === 0 &&
+      p.vignette === 0 &&
+      p.softness === 0 &&
+      p.sharpen === 0 &&
+      p.bloom === 0 &&
+      p.aberration === 0 &&
+      p.fade === 0 &&
+      p.flash === 0 &&
+      p.temperature === 0 &&
+      p.exposure === 0 &&
+      p.contrast === 0 &&
+      p.saturation === 0;
+
+    if (neutral) {
+      this.ctx.clearRect(0, 0, w, h);
+      this.ctx.imageSmoothingEnabled = true;
+      this.ctx.imageSmoothingQuality = "high";
+      this.ctx.drawImage(this.source as CanvasImageSource, 0, 0, w, h);
+      return;
+    }
+
     // ---- source + plastic-lens softness ----
     wc.save();
     wc.clearRect(0, 0, w, h);
@@ -248,10 +274,12 @@ export class CanvasRenderer implements Renderer {
         g = Math.max(0, (g - 0.5) * contrast + 0.5);
         b = Math.max(0, (b - 0.5) * contrast + 0.5);
 
-        const crush = 0.012 + Math.max(p.contrast, 0) * 0.045;
-        r = Math.max(0, (r - crush) / (1 - crush));
-        g = Math.max(0, (g - crush) / (1 - crush));
-        b = Math.max(0, (b - crush) / (1 - crush));
+        const crush = Math.max(p.contrast, 0) * 0.045;
+        if (crush > 0) {
+          r = Math.max(0, (r - crush) / (1 - crush));
+          g = Math.max(0, (g - crush) / (1 - crush));
+          b = Math.max(0, (b - crush) / (1 - crush));
+        }
 
         // Short digital shoulder before the hard sensor/JPEG clip.
         const clip = (v: number) => Math.min(1.05, v - Math.max(v - 0.86, 0) * 0.42);
