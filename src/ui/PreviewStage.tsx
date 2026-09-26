@@ -14,6 +14,8 @@ export function PreviewStage({
   presetName,
   zoom,
   pan,
+  mirror,
+  flipVertical,
   onZoomChange,
   onToggleZoom,
   onPanChange,
@@ -31,10 +33,14 @@ export function PreviewStage({
   presetName: string;
   zoom: number;
   pan: { x: number; y: number };
+  mirror: boolean;
+  flipVertical: boolean;
   onZoomChange: (value: number) => void;
   onToggleZoom: () => void;
   onPanChange: (value: { x: number; y: number }) => void;
   onZoomWheel: (delta: number) => void;
+  onToggleMirror: () => void;
+  onToggleFlipVertical: () => void;
   onOpen: () => void;
   onSample: () => void;
 }) {
@@ -87,7 +93,9 @@ export function PreviewStage({
               "px, " +
               pan.y +
               "px, 0) scale(" +
-              zoom +
+              (zoom * (mirror ? -1 : 1)) +
+              ", " +
+              (zoom * (flipVertical ? -1 : 1)) +
               ")",
             transformOrigin: "center center",
             touchAction: "none",
@@ -172,6 +180,30 @@ export function PreviewStage({
             >
               Fit
             </Button>
+          </div>
+
+          <div className="pointer-events-none absolute bottom-2 right-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+            <Button
+              className="px-2"
+              aria-pressed={mirror}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleMirror();
+              }}
+            >
+              Mirror H
+            </Button>
+            <Button
+              className="px-2"
+              aria-pressed={flipVertical}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFlipVertical();
+              }}
+            >
+              Flip V
+            </Button>
+          </div>
           </div>
         )}
 
