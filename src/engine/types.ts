@@ -49,6 +49,8 @@ export type FilterMode =
   | "cool"
   | "high-contrast";
 
+export type FrameMode = "none" | "collage";
+
 export interface ControlDef {
   id: ParamId;
   label: string;
@@ -69,6 +71,7 @@ export interface Preset {
   note: string;
   params: EffectParams;
   filter?: FilterMode;
+  frame?: FrameMode;
 }
 
 export const DEFAULT_PARAMS: EffectParams = {
