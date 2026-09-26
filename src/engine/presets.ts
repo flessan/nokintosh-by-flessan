@@ -436,3 +436,14 @@ export const PRESETS: Preset[] = [
     },
   ),
 
+];
+
+export const PRESET_MAP: Record<string, Preset> = Object.fromEntries(
+  PRESETS.map((p) => [p.id, p]),
+);
+
+export function paramsEqual(a: EffectParams, b: EffectParams): boolean {
+  return (Object.keys(a) as (keyof EffectParams)[]).every(
+    (k) => Math.abs(a[k] - b[k]) < 0.0005,
+  );
+}
