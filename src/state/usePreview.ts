@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { LoadedPhoto } from "../engine/image";
 import { applyFrame } from "../engine/frame";
-import { applyCanvasTransform, IDENTITY_TRANSFORM, sameTransform, type ImageTransform } from "../engine/transform";
+import { applyCanvasTransform, type ImageTransform } from "../engine/transform";
 import { createRenderer, type Renderer } from "../engine/renderer";
 import type { EffectParams, FilterMode, FrameMode } from "../engine/types";
 
