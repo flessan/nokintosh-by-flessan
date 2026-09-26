@@ -3,19 +3,28 @@ import { PRESETS } from "../engine/presets";
 import { CheckMark } from "./icons";
 
 const FILTER_IDS = new Set([
-  "jpeg",
-  "collage",
-  "blur-pixelate",
-  "ccd",
+  "bw",
+  "sepia",
+  "negative",
+  "warm-filter",
+  "cool-filter",
+  "high-contrast",
+]);
+
+const CAMERA2_IDS = new Set([
   "nokia",
   "quarter-inch",
   "iphone-3gs",
 ]);
 
-const CAMERA_PRESETS = PRESETS.filter(
-  (preset) => preset.id !== "none" && !FILTER_IDS.has(preset.id),
-);
 const FILTER_PRESETS = PRESETS.filter((preset) => FILTER_IDS.has(preset.id));
+const CAMERA2_PRESETS = PRESETS.filter((preset) => CAMERA2_IDS.has(preset.id));
+const DIRECT_PRESETS = PRESETS.filter(
+  (preset) =>
+    preset.id !== "none" &&
+    !FILTER_IDS.has(preset.id) &&
+    !CAMERA2_IDS.has(preset.id),
+);
 const ORIGINAL = PRESETS.find((preset) => preset.id === "none")!;
 
 export function PresetList({
@@ -28,7 +37,7 @@ export function PresetList({
   onHint?: (text: string | null) => void;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<"filters" | "camera2" | null>(null);
 
   const renderItem = (p: (typeof PRESETS)[number], nested = false) => {
     const selected = p.id === presetId;
@@ -38,14 +47,14 @@ export function PresetList({
       <button
         key={p.id}
         type="button"
+        role={nested ? "menuitem" : undefined}
         className={"ui-item text-[12px] " + (nested ? "pl-6" : "")}
-        style={
-          active
-            ? { backgroundColor: "var(--sel)", color: "#ffffff" }
-            : undefined
-        }
+        style={active ? { backgroundColor: "var(--sel)", color: "#ffffff" } : undefined}
         aria-pressed={selected}
-        onClick={() => onPick(p.id)}
+        onClick={() => {
+          setOpenMenu(null);
+          onPick(p.id);
+        }}
         onMouseEnter={() => {
           setHovered(p.id);
           onHint?.(p.note);
@@ -57,7 +66,7 @@ export function PresetList({
         onFocus={() => onHint?.(p.note)}
         onBlur={() => onHint?.(null)}
       >
-        <span className="flex items-center gap-1">
+        <span className="flex min-w-0 items-center gap-1">
           <span className="w-[12px] shrink-0">
             {selected ? <CheckMark size={10} /> : null}
           </span>
@@ -67,60 +76,71 @@ export function PresetList({
     );
   };
 
+  const renderMenu = (
+    label: string,
+    menu: "filters" | "camera2",
+    items: typeof FILTER_PRESETS,
+    selected: boolean,
+  ) => (
+    <div className="relative">
+      <button
+        type="button"
+        className="ui-item text-[12px]"
+        style={
+          openMenu === menu || selected
+            ? { backgroundColor: "var(--sel)", color: "#ffffff" }
+            : undefined
+        }
+        aria-haspopup="menu"
+        aria-expanded={openMenu === menu}
+        onClick={() => setOpenMenu((current) => (current === menu ? null : menu))}
+        onMouseEnter={() => {
+          setHovered(null);
+          setOpenMenu(menu);
+          onHint?.(
+            menu === "filters"
+              ? "B&W, sepia and other generic image filters."
+              : "Small-sensor and early-phone camera profiles.",
+          );
+        }}
+      >
+        <span className="flex items-center gap-1">
+          <span className="w-[12px] shrink-0" />
+          <span className="min-w-0 flex-1 text-left">{label}</span>
+          <span className="text-[11px]">{openMenu === menu ? "▼" : "▶"}</span>
+        </span>
+      </button>
+
+      {openMenu === menu && (
+        <div
+          className="bevel-raised absolute left-full top-0 z-50 min-w-[180px] p-[2px]"
+          role="menu"
+          aria-label={label}
+        >
+          {items.map((item) => renderItem(item, true))}
+        </div>
+      )}
+    </div>
+  );
+
   const filtersSelected = FILTER_PRESETS.some((p) => p.id === presetId);
+  const camera2Selected = CAMERA2_PRESETS.some((p) => p.id === presetId);
 
   return (
     <div
       className="relative bg-white"
       onMouseLeave={() => {
-        setFiltersOpen(false);
+        setOpenMenu(null);
         setHovered(null);
         onHint?.(null);
       }}
     >
       {renderItem(ORIGINAL)}
+      {renderMenu("Filters", "filters", FILTER_PRESETS, filtersSelected)}
 
-      <div className="relative">
-        <button
-          type="button"
-          className="ui-item text-[12px]"
-          style={
-            filtersOpen || filtersSelected
-              ? { backgroundColor: "var(--sel)", color: "#ffffff" }
-              : undefined
-          }
-          aria-haspopup="menu"
-          aria-expanded={filtersOpen}
-          onClick={() => setFiltersOpen((value) => !value)}
-          onMouseEnter={() => {
-            setHovered(null);
-            setFiltersOpen(true);
-            onHint?.("Reference-style digital filters.");
-          }}
-          onFocus={() => {
-            setFiltersOpen(true);
-            onHint?.("Reference-style digital filters.");
-          }}
-        >
-          <span className="flex items-center gap-1">
-            <span className="w-[12px] shrink-0" />
-            <span className="min-w-0 flex-1">Filters</span>
-            <span className="text-[11px]">{filtersOpen ? "▼" : "▶"}</span>
-          </span>
-        </button>
+      {DIRECT_PRESETS.map((p) => renderItem(p))}
 
-        {filtersOpen && (
-          <div
-            className="bevel-raised absolute left-full top-0 z-50 min-w-[180px] p-[2px]"
-            role="menu"
-            aria-label="Filters"
-          >
-            {FILTER_PRESETS.map((p) => renderItem(p, true))}
-          </div>
-        )}
-      </div>
-
-      {CAMERA_PRESETS.map((p) => renderItem(p))}
+      {renderMenu("Camera 2", "camera2", CAMERA2_PRESETS, camera2Selected)}
 
       {presetId === "custom" && (
         <span className="ui-item block bg-[color:var(--sel)] text-[12px] text-white">
