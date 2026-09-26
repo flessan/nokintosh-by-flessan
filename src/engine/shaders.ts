@@ -66,7 +66,7 @@ void main() {
 export const FRAG_MAIN = `#version 300 es
 ${COMMON}
 uniform sampler2D u_tex;
-uniform sampler2D u_bloom;
+uniform sampler2D u_bloomTex;
 uniform vec2 u_texel;      // 1 / source size
 uniform float u_scale;     // render width / 1280, keeps effects resolution independent
 uniform float u_seed;
@@ -182,7 +182,7 @@ void main() {
 
   // ---- bloom (screen blend over highlights) ----
   if (u_bloom > 0.001) {
-    vec3 b = texture(u_bloom, uv).rgb;
+    vec3 b = texture(u_bloomTex, uv).rgb;
     c = 1.0 - (1.0 - clamp(c, 0.0, 1.0)) * (1.0 - clamp(b * u_bloom * 1.25, 0.0, 1.0));
   }
 
