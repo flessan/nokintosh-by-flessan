@@ -64,12 +64,13 @@ function effectWeight(
   y: number,
   mask: Uint8ClampedArray | null,
   width: number,
+  height: number,
 ) {
   if (mode === "uniform") return amount;
 
   if (mode === "vignette") {
     const dx = x / width - 0.5;
-    const dy = y / (mask ? Math.max(1, mask.length / width / 4) : 1) - 0.5;
+    const dy = y / height - 0.5;
     const radius = Math.hypot(dx, dy);
     return amount * smoothstep(0.28, 0.72, radius);
   }
@@ -202,7 +203,7 @@ export function applySpecialEffect(canvas: HTMLCanvasElement, effect: SpecialEff
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
-      const alpha = clamp01(effectWeight(effect.mode, effect.amount, x, y, mask, width));
+      const alpha = clamp01(effectWeight(effect.mode, effect.amount, x, y, mask, width, height));
       if (alpha <= 0.001) continue;
 
       out[i] = Math.round(out[i] * (1 - alpha) + fx[i] * alpha);
