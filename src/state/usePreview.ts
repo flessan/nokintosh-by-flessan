@@ -5,23 +5,59 @@ import type { EffectParams } from "../engine/types";
 
 /** Longest edge of the live preview buffer. Export always uses full size. */
 const PREVIEW_MAX = 1200;
+const MAX_CACHED_FRAMES = 6;
+
+type RenderPhase = "idle" | "loading" | "cached" | "rendered";
+
+interface CachedFrame {
+  width: number;
+  height: number;
+  data: ImageData;
+  lastUsed: number;
+}
 
 interface PreviewInfo {
   engine: "webgl2" | "canvas2d" | "none";
   previewWidth: number;
   previewHeight: number;
   lastRenderMs: number;
+  phase: RenderPhase;
+}
+
+function paramsKey(params: EffectParams): string {
+  return [
+    params.grain,
+    params.jpeg,
+    params.colorShift,
+    params.vignette,
+    params.softness,
+    params.sharpen,
+    params.bloom,
+    params.aberration,
+    params.fade,
+    params.flash,
+    params.temperature,
+    params.exposure,
+    params.contrast,
+    params.saturation,
+  ]
+    .map((v) => v.toFixed(3))
+    .join(",");
 }
 
 /**
- * Owns the preview renderer lifecycle. React only supplies parameters; all
- * pixel work happens inside the engine.
+ * Owns the preview renderer lifecycle.
  *
- * The preview is deliberately progressive: resize + paint the source first,
- * yield one frame, then run the expensive effect pass. This prevents the UI
- * from looking like a black/empty canvas while the CPU renderer is working.
+ * Preset previews are cached per photo + preset + output size. Switching back
+ * to a previously rendered preset therefore becomes a cheap ImageData restore
+ * instead of running the whole CPU pipeline again.
  */
-export function usePreview(photo: LoadedPhoto | null, params: EffectParams, showOriginal: boolean) {
+export function usePreview(
+  photo: LoadedPhoto | null,
+  params: EffectParams,
+  presetId: string,
+  showOriginal: boolean,
+) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<Renderer | null>(null);
@@ -30,16 +66,24 @@ export function usePreview(photo: LoadedPhoto | null, params: EffectParams, show
   const renderSerialRef = useRef(0);
   const paramsRef = useRef(params);
   const originalRef = useRef(showOriginal);
+  const presetRef = useRef(presetId);
+
+  // WeakMap prevents cached pixels from keeping old photo objects alive after
+  // a new photo is opened or the current photo is closed.
+  const cacheRef = useRef(new WeakMap<LoadedPhoto, Map<string, CachedFrame>>());
+
   const [info, setInfo] = useState<PreviewInfo>({
     engine: "none",
     previewWidth: 0,
     previewHeight: 0,
     lastRenderMs: 0,
+    phase: "idle",
   });
   const [box, setBox] = useState({ w: 0, h: 0 });
 
   paramsRef.current = params;
   originalRef.current = showOriginal;
+  presetRef.current = presetId;
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -67,14 +111,6 @@ export function usePreview(photo: LoadedPhoto | null, params: EffectParams, show
     return () => ro.disconnect();
   }, []);
 
-  useEffect(() => {
-    const r = rendererRef.current;
-    if (!r || !photo) return;
-    r.setSource(photo.preview, photo.preview.width, photo.preview.height);
-    schedule();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photo]);
-
   function getOutputSize() {
     if (!photo || box.w < 8 || box.h < 8) return null;
 
@@ -90,7 +126,11 @@ export function usePreview(photo: LoadedPhoto | null, params: EffectParams, show
     let bw = Math.max(1, Math.round(cssW * dpr));
     let bh = Math.max(1, Math.round(cssH * dpr));
     const r = rendererRef.current;
-    const cap = Math.min(PREVIEW_MAX, r?.maxTextureSize ?? PREVIEW_MAX, Math.max(photo.width, photo.height));
+    const cap = Math.min(
+      PREVIEW_MAX,
+      r?.maxTextureSize ?? PREVIEW_MAX,
+      Math.max(photo.width, photo.height),
+    );
     const longest = Math.max(bw, bh);
 
     if (longest > cap) {
@@ -111,33 +151,86 @@ export function usePreview(photo: LoadedPhoto | null, params: EffectParams, show
     if (photo) ctx.drawImage(photo.preview as CanvasImageSource, 0, 0, bw, bh);
   }
 
+  function cacheKey(bw: number, bh: number) {
+    if (!photo || presetRef.current === "custom") return null;
+    return [
+      presetRef.current,
+      bw,
+      bh,
+      paramsKey(paramsRef.current),
+    ].join("|");
+  }
+
+  function getCachedFrame(key: string, bw: number, bh: number): CachedFrame | null {
+    if (!photo) return null;
+    const map = cacheRef.current.get(photo);
+    const frame = map?.get(key);
+    if (!frame || frame.width !== bw || frame.height !== bh) return null;
+    frame.lastUsed = performance.now();
+    return frame;
+  }
+
+  function storeCachedFrame(key: string, bw: number, bh: number, data: ImageData) {
+    if (!photo) return;
+
+    let map = cacheRef.current.get(photo);
+    if (!map) {
+      map = new Map();
+      cacheRef.current.set(photo, map);
+    }
+
+    map.set(key, {
+      width: bw,
+      height: bh,
+      data,
+      lastUsed: performance.now(),
+    });
+
+    while (map.size > MAX_CACHED_FRAMES) {
+      let oldestKey: string | null = null;
+      let oldest = Infinity;
+      for (const [entryKey, entry] of map) {
+        if (entry.lastUsed < oldest) {
+          oldest = entry.lastUsed;
+          oldestKey = entryKey;
+        }
+      }
+      if (oldestKey === null) break;
+      map.delete(oldestKey);
+    }
+  }
+
   function prepare() {
     prepareFrameRef.current = null;
     const r = rendererRef.current;
     const canvas = canvasRef.current;
-    if (!r || !canvas || !photo) return false;
+    if (!r || !canvas || !photo) return null;
 
     const size = getOutputSize();
-    if (!size) return false;
+    if (!size) return null;
 
-    canvas.style.width = `${Math.round(size.cssW)}px`;
-    canvas.style.height = `${Math.round(size.cssH)}px`;
+    canvas.style.width = Math.round(size.cssW) + "px";
+    canvas.style.height = Math.round(size.cssH) + "px";
 
     r.setSource(photo.preview, photo.preview.width, photo.preview.height);
     r.resize(size.bw, size.bh);
 
-    // The active renderer is currently Canvas2D, so we can paint an immediate
-    // source frame before yielding. If that ever changes to a GPU renderer,
-    // this branch can be replaced by a renderer-native source pass.
+    // Paint a valid source frame immediately, before yielding to the expensive
+    // CPU pass. This avoids a black canvas during large-image processing.
     paintSource(canvas, size.bw, size.bh);
 
     setInfo((i) =>
       i.previewWidth === size.bw && i.previewHeight === size.bh
-        ? i
-        : { ...i, previewWidth: size.bw, previewHeight: size.bh },
+        ? { ...i, phase: originalRef.current ? "idle" : "loading" }
+        : {
+            ...i,
+            previewWidth: size.bw,
+            previewHeight: size.bh,
+            phase: originalRef.current ? "idle" : "loading",
+          },
     );
 
-    return true;
+    return size;
   }
 
   function renderFiltered(serial: number) {
@@ -145,20 +238,41 @@ export function usePreview(photo: LoadedPhoto | null, params: EffectParams, show
     if (serial !== renderSerialRef.current) return;
 
     const r = rendererRef.current;
-    if (!r || !canvasRef.current || !photo) return;
+    const canvas = canvasRef.current;
+    if (!r || !canvas || !photo || originalRef.current) return;
+
+    const bw = canvas.width;
+    const bh = canvas.height;
+    const key = cacheKey(bw, bh);
+
+    if (key) {
+      const cached = getCachedFrame(key, bw, bh);
+      if (cached) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.putImageData(cached.data, 0, 0);
+          setInfo((i) => ({ ...i, lastRenderMs: 0, phase: "cached" }));
+          return;
+        }
+      }
+    }
 
     const t0 = performance.now();
     try {
-      if (originalRef.current) {
-        return;
-      }
       r.render(paramsRef.current);
+
+      if (key) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          storeCachedFrame(key, bw, bh, ctx.getImageData(0, 0, bw, bh));
+        }
+      }
     } catch (error) {
       console.error("Nokintosh preview renderer failed:", error);
       const size = getOutputSize();
       if (size) {
         try {
-          paintSource(canvasRef.current, size.bw, size.bh);
+          paintSource(canvas, size.bw, size.bh);
         } catch (fallbackError) {
           console.error("Nokintosh source preview fallback failed:", fallbackError);
         }
@@ -166,7 +280,7 @@ export function usePreview(photo: LoadedPhoto | null, params: EffectParams, show
     }
 
     const dt = performance.now() - t0;
-    setInfo((i) => ({ ...i, lastRenderMs: dt }));
+    setInfo((i) => ({ ...i, lastRenderMs: dt, phase: "rendered" }));
   }
 
   function schedule() {
@@ -178,12 +292,12 @@ export function usePreview(photo: LoadedPhoto | null, params: EffectParams, show
     }
     if (prepareFrameRef.current !== null) return;
 
+    setInfo((i) => ({ ...i, phase: photo && !originalRef.current ? "loading" : "idle" }));
+
     prepareFrameRef.current = requestAnimationFrame(() => {
       if (!prepare()) return;
       if (originalRef.current) return;
 
-      // Read the newest serial after the preparation step. Multiple React
-      // effects can coalesce into this same frame.
       const serial = renderSerialRef.current;
       renderFrameRef.current = requestAnimationFrame(() => renderFiltered(serial));
     });
@@ -192,7 +306,7 @@ export function usePreview(photo: LoadedPhoto | null, params: EffectParams, show
   useEffect(() => {
     schedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, box.w, box.h, showOriginal, photo]);
+  }, [params, presetId, box.w, box.h, showOriginal, photo]);
 
   useEffect(() => {
     return () => {
