@@ -1,8 +1,13 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { RefObject } from "react";
+import type { DrawPoint, SpecialEffectState } from "../engine/types";
 import type { LoadedPhoto } from "../engine/image";
 import { Button } from "./widgets";
 import { FlipVerticalIcon, MirrorIcon } from "./icons";
+
+function pathData(points: DrawPoint[]) {
+  return points.map((point) => `${point.x},${point.y}`).join(" ");
+}
 
 export function PreviewStage({
   photo,
@@ -17,10 +22,14 @@ export function PreviewStage({
   pan,
   mirror,
   flipVertical,
+  specialEffect,
   onZoomChange,
   onToggleZoom,
   onPanChange,
   onZoomWheel,
+  onToggleMirror,
+  onToggleFlipVertical,
+  onDrawStroke,
   onOpen,
   onSample,
 }: {
@@ -36,16 +45,20 @@ export function PreviewStage({
   pan: { x: number; y: number };
   mirror: boolean;
   flipVertical: boolean;
+  specialEffect: SpecialEffectState;
   onZoomChange: (value: number) => void;
   onToggleZoom: () => void;
   onPanChange: (value: { x: number; y: number }) => void;
   onZoomWheel: (delta: number) => void;
   onToggleMirror: () => void;
   onToggleFlipVertical: () => void;
+  onDrawStroke: (points: DrawPoint[]) => void;
   onOpen: () => void;
   onSample: () => void;
 }) {
   const zoomLabel = Math.round(zoom * 100) + "%";
+  const [draftStroke, setDraftStroke] = useState<DrawPoint[] | null>(null);
+  const drawRef = useRef<{ pointerId: number; points: DrawPoint[] } | null>(null);
   const dragRef = useRef<{
     pointerId: number;
     startX: number;
@@ -55,6 +68,20 @@ export function PreviewStage({
     moved: boolean;
   } | null>(null);
   const suppressClickRef = useRef(false);
+
+  const drawMode =
+    specialEffect.kind !== "none" && specialEffect.mode === "draw";
+
+  const toPoint = (event: React.PointerEvent<HTMLCanvasElement>): DrawPoint | null => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    return {
+      x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
+      y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
+    };
+  };
 
   const clampPan = (next: { x: number; y: number }) => {
     const stage = stageRef.current;
@@ -70,13 +97,25 @@ export function PreviewStage({
     };
   };
 
+  const canvasRect = drawMode ? canvasRef.current?.getBoundingClientRect() : null;
+  const stageRect = drawMode ? stageRef.current?.getBoundingClientRect() : null;
+  const drawOverlayStyle =
+    canvasRect && stageRect
+      ? {
+          left: canvasRect.left - stageRect.left,
+          top: canvasRect.top - stageRect.top,
+          width: canvasRect.width,
+          height: canvasRect.height,
+        }
+      : undefined;
+
   return (
     <div className="bevel-sunken relative min-h-0 flex-1 overflow-hidden bg-[#6e6e6e] p-[3px]">
       <div
         ref={stageRef}
         className="workspace group relative flex h-full w-full items-center justify-center overflow-hidden"
         onWheel={(e) => {
-          if (!photo) return;
+          if (!photo || drawMode) return;
           e.preventDefault();
           onZoomWheel(e.deltaY);
         }}
@@ -85,7 +124,15 @@ export function PreviewStage({
           ref={canvasRef}
           className={
             "nodrag block max-h-full max-w-full " +
-            (photo ? (zoom > 1 ? "cursor-grab" : "cursor-zoom-in") : "pointer-events-none absolute opacity-0")
+            (
+              photo
+                ? drawMode
+                  ? "cursor-crosshair"
+                  : zoom > 1
+                    ? "cursor-grab"
+                    : "cursor-zoom-in"
+                : "pointer-events-none absolute opacity-0"
+            )
           }
           style={{
             transform:
@@ -100,7 +147,20 @@ export function PreviewStage({
             touchAction: "none",
           }}
           onPointerDown={(e) => {
-            if (!photo || zoom <= 1) return;
+            if (!photo) return;
+
+            if (drawMode) {
+              e.preventDefault();
+              e.stopPropagation();
+              const point = toPoint(e);
+              if (!point) return;
+              drawRef.current = { pointerId: e.pointerId, points: [point] };
+              setDraftStroke([point]);
+              e.currentTarget.setPointerCapture(e.pointerId);
+              return;
+            }
+
+            if (zoom <= 1) return;
             dragRef.current = {
               pointerId: e.pointerId,
               startX: e.clientX,
@@ -113,6 +173,19 @@ export function PreviewStage({
             e.currentTarget.setPointerCapture(e.pointerId);
           }}
           onPointerMove={(e) => {
+            const drawing = drawRef.current;
+            if (drawing && drawing.pointerId === e.pointerId) {
+              const point = toPoint(e);
+              if (!point) return;
+              const previous = drawing.points[drawing.points.length - 1];
+              if (previous && Math.hypot(point.x - previous.x, point.y - previous.y) < 0.002) {
+                return;
+              }
+              drawing.points.push(point);
+              setDraftStroke([...drawing.points]);
+              return;
+            }
+
             const drag = dragRef.current;
             if (!drag || drag.pointerId !== e.pointerId) return;
 
@@ -131,6 +204,17 @@ export function PreviewStage({
             );
           }}
           onPointerUp={(e) => {
+            const drawing = drawRef.current;
+            if (drawing && drawing.pointerId === e.pointerId) {
+              drawRef.current = null;
+              setDraftStroke(null);
+              if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }
+              onDrawStroke(drawing.points);
+              return;
+            }
+
             const drag = dragRef.current;
             if (!drag || drag.pointerId !== e.pointerId) return;
             dragRef.current = null;
@@ -138,11 +222,15 @@ export function PreviewStage({
               e.currentTarget.releasePointerCapture(e.pointerId);
             }
           }}
-          onPointerCancel={() => {
+          onPointerCancel={(e) => {
+            if (drawRef.current?.pointerId === e.pointerId) {
+              drawRef.current = null;
+              setDraftStroke(null);
+            }
             dragRef.current = null;
           }}
           onClick={() => {
-            if (!photo) return;
+            if (!photo || drawMode) return;
             if (suppressClickRef.current) {
               suppressClickRef.current = false;
               return;
@@ -151,6 +239,27 @@ export function PreviewStage({
           }}
           aria-label={photo ? "Preview of " + photo.name : "Photo preview"}
         />
+
+        {drawMode && draftStroke && drawOverlayStyle && (
+          <svg
+            className="pointer-events-none absolute z-20"
+            style={drawOverlayStyle}
+            viewBox="0 0 1 1"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <polyline
+              points={pathData(draftStroke)}
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth={specialEffect.brushSize}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              style={{ filter: "drop-shadow(1px 1px 0 #000)" }}
+            />
+          </svg>
+        )}
 
         {photo && (
           <>
@@ -207,6 +316,13 @@ export function PreviewStage({
               </Button>
             </div>
           </>
+        )}
+
+        {drawMode && (
+          <div className="pointer-events-none absolute left-2 top-2 z-20 bg-[color:var(--face)] px-2 py-[2px] text-[11px] font-bold bevel-raised shadow-[2px_2px_0_0_rgba(0,0,0,0.25)]">
+            {specialEffect.kind === "gaussian-blur" ? "Gaussian Blur" : "Pixelate"} // Draw
+            <span className="ml-2 font-normal">Drag on photo</span>
+          </div>
         )}
 
         {photo && rendering && (
