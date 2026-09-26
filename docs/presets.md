@@ -47,3 +47,8 @@ you only describe what the look actually changes.
 | `contrast` | -1..1 | Contrast and black crush |
 | `saturation` | -1..1 | Colour intensity |
 | `temperature` | -1..1 | Cold to warm white balance |
+
+
+## Preview cache
+
+Preset previews are cached per photo and output size after their first render. The cache uses a small least-recently-used window, so revisiting recent presets restores their pixels without rerunning the full CPU pipeline.
