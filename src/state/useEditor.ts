@@ -186,6 +186,14 @@ export function useEditor() {
   ]);
 
   const undo = useCallback(() => {
+    // First undo cancels an uncommitted draft without consuming history.
+    if (!paramsEqual(params, appliedParams) || presetId !== appliedPresetId) {
+      setParams({ ...appliedParams });
+      setPresetId(appliedPresetId);
+      setStatus("Draft changes undone.");
+      return;
+    }
+
     const snap = past.current.pop();
     if (!snap) return;
 
@@ -201,9 +209,15 @@ export function useEditor() {
     setAppliedPresetId(snap.presetId);
     setStatus("Undo.");
     setHistoryTick((t) => t + 1);
-  }, [appliedParams, appliedPresetId]);
+  }, [appliedParams, appliedPresetId, params, presetId]);
 
   const redo = useCallback(() => {
+    // If the user is sitting on a draft, redo first has no committed meaning.
+    if (!paramsEqual(params, appliedParams) || presetId !== appliedPresetId) {
+      setStatus("Apply the current draft before using Redo.");
+      return;
+    }
+
     const snap = future.current.pop();
     if (!snap) return;
 
@@ -219,7 +233,7 @@ export function useEditor() {
     setAppliedPresetId(snap.presetId);
     setStatus("Redo.");
     setHistoryTick((t) => t + 1);
-  }, [appliedParams, appliedPresetId]);
+  }, [appliedParams, appliedPresetId, params, presetId]);
 
   const hasUnappliedChanges =
     !paramsEqual(params, appliedParams) || presetId !== appliedPresetId;
