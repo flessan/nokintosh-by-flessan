@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import type { RefObject } from "react";
+import type { PointerEvent, RefObject } from "react";
 import type { DrawPoint, SpecialEffectState } from "../engine/types";
 import type { LoadedPhoto } from "../engine/image";
 import { Button } from "./widgets";
@@ -72,7 +72,7 @@ export function PreviewStage({
   const drawMode =
     specialEffect.kind !== "none" && specialEffect.mode === "draw";
 
-  const toPoint = (event: React.PointerEvent<HTMLCanvasElement>): DrawPoint | null => {
+  const toPoint = (event: PointerEvent<HTMLCanvasElement>): DrawPoint | null => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
@@ -255,7 +255,6 @@ export function PreviewStage({
               strokeWidth={specialEffect.brushSize}
               strokeLinecap="round"
               strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
               style={{ filter: "drop-shadow(1px 1px 0 #000)" }}
             />
           </svg>
