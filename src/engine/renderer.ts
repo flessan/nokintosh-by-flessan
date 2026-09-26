@@ -1,5 +1,4 @@
 import { CanvasRenderer } from "./canvasRenderer";
-import { GLRenderer } from "./glRenderer";
 import type { EffectParams } from "./types";
 
 /** Anything the engine can accept as decoded pixels. */
