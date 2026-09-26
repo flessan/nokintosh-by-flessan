@@ -17,6 +17,7 @@ export interface Menu {
 
 export function MenuBar({ menus }: { menus: Menu[] }) {
   const [open, setOpen] = useState<number | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -78,12 +79,14 @@ export function MenuBar({ menus }: { menus: Menu[] }) {
                     type="button"
                     role="menuitem"
                     disabled={item.disabled}
-                    className={
-                      "flex w-full items-center gap-2 px-[6px] py-[4px] text-left text-[12px] " +
-                      (item.disabled
-                        ? "text-[color:var(--disabled)]"
-                        : "hover:bg-[color:var(--sel)] hover:text-white")
+                    className="flex w-full items-center gap-2 px-[6px] py-[4px] text-left text-[12px]"
+                    style={
+                      !item.disabled && hovered === (String(i) + ":" + String(k))
+                        ? { backgroundColor: "var(--sel)", color: "#ffffff" }
+                        : undefined
                     }
+                    onPointerEnter={() => !item.disabled && setHovered(String(i) + ":" + String(k))}
+                    onPointerLeave={() => setHovered(null)}
                     onClick={() => {
                       setOpen(null);
                       item.action?.();
