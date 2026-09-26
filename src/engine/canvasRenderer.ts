@@ -1,4 +1,4 @@
-import type { EffectParams } from "./types";
+import type { EffectParams, FilterMode } from "./types";
 import type { ImageSource, Renderer } from "./renderer";
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
@@ -112,7 +112,7 @@ export class CanvasRenderer implements Renderer {
     this.bloomBlur.height = bh;
   }
 
-  render(p: EffectParams) {
+  render(p: EffectParams, filter: FilterMode = "none") {
     if (!this.source) return;
 
     const w = this.canvas.width;
@@ -429,6 +429,53 @@ export class CanvasRenderer implements Renderer {
           d[i] = Math.round(d[i] * factor);
           d[i + 1] = Math.round(d[i + 1] * factor);
           d[i + 2] = Math.round(d[i + 2] * factor);
+        }
+      }
+    }
+
+    // ---- named digital filter ----
+    // Applied after the camera character so the filter changes the final
+    // image appearance without pretending to be a physical sensor effect.
+    if (filter !== "none") {
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = pixelIndex(x, y, w);
+          let r = d[i] / 255;
+          let g = d[i + 1] / 255;
+          let b = d[i + 2] / 255;
+
+          if (filter === "bw") {
+            const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            const c = (lum - 0.5) * 1.08 + 0.5;
+            r = g = b = clamp01(c);
+          } else if (filter === "sepia") {
+            const nr = 0.393 * r + 0.769 * g + 0.189 * b;
+            const ng = 0.349 * r + 0.686 * g + 0.168 * b;
+            const nb = 0.272 * r + 0.534 * g + 0.131 * b;
+            r = clamp01(nr);
+            g = clamp01(ng);
+            b = clamp01(nb);
+          } else if (filter === "negative") {
+            r = 1 - r;
+            g = 1 - g;
+            b = 1 - b;
+          } else if (filter === "warm") {
+            r = clamp01(r * 1.08 + 0.018);
+            g = clamp01(g * 1.02 + 0.006);
+            b = clamp01(b * 0.92);
+          } else if (filter === "cool") {
+            r = clamp01(r * 0.93);
+            g = clamp01(g * 0.99 + 0.004);
+            b = clamp01(b * 1.08 + 0.012);
+          } else if (filter === "high-contrast") {
+            r = clamp01((r - 0.5) * 1.32 + 0.5);
+            g = clamp01((g - 0.5) * 1.32 + 0.5);
+            b = clamp01((b - 0.5) * 1.32 + 0.5);
+          }
+
+          d[i] = Math.round(r * 255);
+          d[i + 1] = Math.round(g * 255);
+          d[i + 2] = Math.round(b * 255);
         }
       }
     }
