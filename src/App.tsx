@@ -246,12 +246,11 @@ export default function App() {
     : "no image";
   const previewName = PRESET_MAP[presetId]?.name ?? "Custom";
   const previewStatus =
-    hint ??
-    (info.phase === "loading"
+    info.phase === "loading"
       ? "[Loading] " + previewName
       : info.phase === "cached"
         ? "[Cached] " + previewName
-        : info.phase === "rendered"
+        : hint ?? (info.phase === "rendered"
           ? "Preview ready // " + previewName
           : editor.status);
   const engineLabel =
