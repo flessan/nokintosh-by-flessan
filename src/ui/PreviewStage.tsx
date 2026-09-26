@@ -2,6 +2,7 @@ import { useRef } from "react";
 import type { RefObject } from "react";
 import type { LoadedPhoto } from "../engine/image";
 import { Button } from "./widgets";
+import { FlipVerticalIcon, MirrorIcon } from "./icons";
 
 export function PreviewStage({
   photo,
@@ -93,9 +94,7 @@ export function PreviewStage({
               "px, " +
               pan.y +
               "px, 0) scale(" +
-              (zoom * (mirror ? -1 : 1)) +
-              ", " +
-              (zoom * (flipVertical ? -1 : 1)) +
+              zoom +
               ")",
             transformOrigin: "center center",
             touchAction: "none",
@@ -185,18 +184,18 @@ export function PreviewStage({
 
             <div className="pointer-events-none absolute bottom-2 right-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
               <Button
-                className="px-2"
+                className="h-[22px] w-[24px] min-w-0 p-0"
                 aria-pressed={mirror}
-                title="Mirror / flip horizontally"
+                title="Mirror horizontally"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleMirror();
                 }}
               >
-                Mirror H
+                <MirrorIcon size={14} />
               </Button>
               <Button
-                className="px-2"
+                className="h-[22px] w-[24px] min-w-0 p-0"
                 aria-pressed={flipVertical}
                 title="Flip vertically"
                 onClick={(e) => {
@@ -204,7 +203,7 @@ export function PreviewStage({
                   onToggleFlipVertical();
                 }}
               >
-                Flip V
+                <FlipVerticalIcon size={14} />
               </Button>
             </div>
           </>
