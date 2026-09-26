@@ -9,8 +9,6 @@ export interface LoadedPhoto {
   height: number;
   name: string;
   bytes: number;
-  /** Object URL used by the plain image fallback in the preview. */
-  displayUrl: string;
 }
 
 /** Long edge of the buffer kept around for the interactive preview. */
@@ -65,23 +63,16 @@ async function makePreview(source: Decoded): Promise<ImageSource> {
 }
 
 async function build(blob: Blob, name: string, bytes: number): Promise<LoadedPhoto> {
-  const displayUrl = URL.createObjectURL(blob);
-  try {
-    const decoded = await decode(blob);
-    const preview = await makePreview(decoded);
-    return {
-      source: decoded,
-      preview,
-      width: decoded.width,
-      height: decoded.height,
-      name,
-      bytes,
-      displayUrl,
-    };
-  } catch (error) {
-    URL.revokeObjectURL(displayUrl);
-    throw error;
-  }
+  const decoded = await decode(blob);
+  const preview = await makePreview(decoded);
+  return {
+    source: decoded,
+    preview,
+    width: decoded.width,
+    height: decoded.height,
+    name,
+    bytes,
+  };
 }
 
 export async function loadFromFile(file: File): Promise<LoadedPhoto> {
@@ -108,7 +99,6 @@ export function releasePhoto(photo: LoadedPhoto | null) {
   if (!photo) return;
   if (photo.preview !== photo.source) release(photo.preview);
   release(photo.source);
-  URL.revokeObjectURL(photo.displayUrl);
 }
 
 export const SAMPLE_IMAGE_URL =
