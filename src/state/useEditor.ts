@@ -20,8 +20,9 @@ interface Snapshot {
 
 const MAX_HISTORY = 40;
 
-const INITIAL_PARAMS = { ...PRESETS[1].params };
-const INITIAL_PRESET_ID = PRESETS[1].id;
+const INITIAL_PRESET = PRESETS.find((preset) => preset.id === "ccd") ?? PRESETS[0];
+const INITIAL_PARAMS = { ...INITIAL_PRESET.params };
+const INITIAL_PRESET_ID = INITIAL_PRESET.id;
 
 export function useEditor() {
   const [photo, setPhoto] = useState<LoadedPhoto | null>(null);
@@ -166,9 +167,13 @@ export function useEditor() {
   }, [
     appliedParams,
     appliedPresetId,
+    appliedFilter,
+    appliedTransform,
+    filter,
     params,
     presetId,
     pushHistory,
+    transform,
   ]);
 
   // Slider interaction changes only the draft. These callbacks remain here
@@ -222,9 +227,13 @@ export function useEditor() {
   }, [
     appliedParams,
     appliedPresetId,
+    appliedFilter,
+    appliedTransform,
+    filter,
     params,
     presetId,
     pushHistory,
+    transform,
   ]);
 
   const undo = useCallback(() => {
@@ -264,7 +273,7 @@ export function useEditor() {
     setAppliedTransform({ ...snap.transform });
     setStatus("Undo.");
     setHistoryTick((t) => t + 1);
-  }, [appliedParams, appliedPresetId, params, presetId]);
+  }, [appliedParams, appliedPresetId, appliedFilter, appliedTransform, filter, params, presetId, transform]);
 
   const redo = useCallback(() => {
     // If the user is sitting on a draft, redo first has no committed meaning.
@@ -295,6 +304,8 @@ export function useEditor() {
     setAppliedParams({ ...restored });
     setAppliedPresetId(snap.presetId);
     setAppliedFilter(snap.filter);
+    setTransform({ ...snap.transform });
+    setAppliedTransform({ ...snap.transform });
     setStatus("Redo.");
     setHistoryTick((t) => t + 1);
   }, [appliedParams, appliedPresetId, params, presetId]);
@@ -313,7 +324,12 @@ export function useEditor() {
     transform,
     status,
     loading,
-    canUndo: past.current.length > 0,
+    canUndo:
+      past.current.length > 0 ||
+      !paramsEqual(params, appliedParams) ||
+      presetId !== appliedPresetId ||
+      filter !== appliedFilter ||
+      !sameTransform(transform, appliedTransform),
     canRedo: future.current.length > 0,
     historyTick,
     hasUnappliedChanges,
