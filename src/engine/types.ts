@@ -51,6 +51,36 @@ export type FilterMode =
 
 export type FrameMode = "none" | "collage";
 
+export type SpecialEffectKind = "none" | "gaussian-blur" | "pixelate";
+export type SpecialEffectMode = "uniform" | "vignette" | "draw";
+
+export interface DrawPoint {
+  x: number;
+  y: number;
+}
+
+export interface DrawStroke {
+  points: DrawPoint[];
+}
+
+export interface SpecialEffectState {
+  kind: SpecialEffectKind;
+  mode: SpecialEffectMode;
+  /** 0..1 effect strength. */
+  amount: number;
+  /** 0..1 of the shortest image edge, used only by Draw mode. */
+  brushSize: number;
+  strokes: DrawStroke[];
+}
+
+export const DEFAULT_SPECIAL_EFFECT: SpecialEffectState = {
+  kind: "none",
+  mode: "uniform",
+  amount: 0.65,
+  brushSize: 0.1,
+  strokes: [],
+};
+
 export interface ControlDef {
   id: ParamId;
   label: string;
