@@ -38,7 +38,7 @@ export default function App() {
   const dragDepth = useRef(0);
 
   const { photo, params, presetId } = editor;
-  const { canvasRef, stageRef, info } = usePreview(photo, params, presetId, showOriginal);
+  const { canvasRef, stageRef, info } = usePreview(photo, params, presetId, showOriginal, !editor.hasUnappliedChanges);
 
   // ---------- file input ----------
   const pickFile = useCallback(() => fileInput.current?.click(), []);
@@ -246,13 +246,14 @@ export default function App() {
     : "no image";
   const previewName = PRESET_MAP[presetId]?.name ?? "Custom";
   const previewStatus =
-    info.phase === "loading"
+    hint ??
+    (info.phase === "loading"
       ? "[Loading] " + previewName
       : info.phase === "cached"
         ? "[Cached] " + previewName
         : info.phase === "rendered"
           ? "Preview ready // " + previewName
-          : hint ?? editor.status;
+          : editor.status);
   const engineLabel =
     info.engine === "webgl2"
       ? `GPU  ${info.previewWidth}x${info.previewHeight}  ${info.lastRenderMs.toFixed(1)}ms`
