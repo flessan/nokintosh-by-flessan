@@ -212,7 +212,6 @@ export function useEditor() {
     presetId,
     pushHistory,
     specialEffect,
-    appliedSpecialEffect,
     transform,
   ]);
 
@@ -338,6 +337,8 @@ export function useEditor() {
     params,
     presetId,
     pushHistory,
+    specialEffect,
+    appliedSpecialEffect,
     transform,
   ]);
 
