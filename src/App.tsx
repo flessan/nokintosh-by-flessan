@@ -158,7 +158,9 @@ export default function App() {
   const zoomByWheel = useCallback((delta: number) => {
     setZoom((current) => {
       const direction = delta > 0 ? -0.25 : 0.25;
-      return Math.min(4, Math.max(1, Math.round((current + direction) * 4) / 4));
+      const next = Math.min(4, Math.max(1, Math.round((current + direction) * 4) / 4));
+      if (next === 1) setPan({ x: 0, y: 0 });
+      return next;
     });
   }, []);
 
