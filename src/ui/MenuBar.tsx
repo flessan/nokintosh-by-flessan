@@ -65,7 +65,6 @@ export function MenuBar({ menus }: { menus: Menu[] }) {
               e.preventDefault();
               setOpen(open === i ? null : i);
             }}
-            onPointerEnter={() => open !== null && setOpen(i)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
