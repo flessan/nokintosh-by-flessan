@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -21,16 +20,18 @@
 html,
 body,
 #root {
+  width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 body {
   margin: 0;
   background: var(--desktop);
   color: var(--ink);
-  font-family: "Press Start 2P", "Courier New", Tahoma, Verdana, "Segoe UI", "MS Sans Serif", monospace;
-  font-size: 10px;
-  line-height: 1.6;
+  font-family: Tahoma, Verdana, "Segoe UI", "MS Sans Serif", system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.35;
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior: none;
@@ -38,7 +39,7 @@ body {
 
 @media (max-width: 860px) {
   body {
-    font-size: 11px;
+    font-size: 13px;
   }
 }
 
@@ -151,15 +152,9 @@ textarea {
 }
 
 .ui-item:hover,
-.ui-item:focus-visible,
-.ui-item:hover:not([aria-pressed="true"]) {
+.ui-item:focus-visible {
   background: var(--sel) !important;
   color: #ffffff !important;
-}
-
-.ui-tab:hover:not([data-pressed="true"]) {
-  background: var(--sel);
-  color: #ffffff;
 }
 
 .ui-item[aria-pressed="true"] {
@@ -180,6 +175,12 @@ textarea {
 
 .title-bar-inactive {
   background: var(--title-dim);
+}
+
+.ui-tab:hover,
+.ui-tab:focus-visible {
+  background: var(--sel) !important;
+  color: #ffffff !important;
 }
 
 /* ---------- range sliders (classic trackbar) ---------- */
