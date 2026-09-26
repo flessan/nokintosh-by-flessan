@@ -8,6 +8,7 @@ import {
   type ExportOptions,
 } from "./engine/export";
 import { PRESETS, PRESET_MAP } from "./engine/presets";
+import { SPECIAL_EFFECT_LABELS } from "./engine/specialEffect";
 import { useEditor } from "./state/useEditor";
 import { usePreview } from "./state/usePreview";
 import { EffectsPanel } from "./ui/EffectsPanel";
@@ -39,9 +40,19 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement | null>(null);
   const dragDepth = useRef(0);
 
-  const { photo, params, presetId, filter, frame, transform } = editor;
+  const { photo, params, presetId, filter, frame, transform, specialEffect } = editor;
   const cacheCustom = !editor.hasUnappliedChanges;
-  const { canvasRef, stageRef, info } = usePreview(photo, params, presetId, filter, frame, transform, showOriginal, cacheCustom);
+  const { canvasRef, stageRef, info } = usePreview(
+    photo,
+    params,
+    presetId,
+    filter,
+    frame,
+    transform,
+    specialEffect,
+    showOriginal,
+    cacheCustom,
+  );
 
   // ---------- file input ----------
   const pickFile = useCallback(() => fileInput.current?.click(), []);
@@ -119,6 +130,7 @@ export default function App() {
           filter,
           transform,
           frame,
+          specialEffect,
         );
         const presetName = PRESET_MAP[presetId]?.name ?? "custom";
         const name = buildFilename(photo.name, presetName, result.format);
@@ -134,7 +146,7 @@ export default function App() {
         setExporting(false);
       }
     },
-    [editor, exporting, filter, frame, params, photo, presetId, transform],
+    [editor, exporting, filter, frame, params, photo, presetId, specialEffect, transform],
   );
 
   const quickExport = useCallback(() => {
@@ -165,11 +177,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!photo) {
+    if (
+      !photo ||
+      (specialEffect.kind !== "none" && specialEffect.mode === "draw")
+    ) {
       setZoom(1);
       setPan({ x: 0, y: 0 });
     }
-  }, [photo]);
+  }, [photo, specialEffect.kind, specialEffect.mode]);
 
   // ---------- keyboard ----------
   useEffect(() => {
@@ -267,20 +282,60 @@ export default function App() {
       },
       {
         label: "Presets",
-        items: PRESETS.map((p) => ({
-          label: p.name,
-          checked: p.id === presetId,
-          action: () => editor.applyPreset(p.id),
-        })),
+        items: [
+          ...PRESETS.map((p) => ({
+            label: p.name,
+            checked: p.id === presetId,
+            action: () => editor.applyPreset(p.id),
+          })),
+          {
+            label: "Gaussian Blur — Uniform",
+            checked: specialEffect.kind === "gaussian-blur" && specialEffect.mode === "uniform",
+            action: () => editor.chooseSpecialEffect("gaussian-blur", "uniform"),
+            separatorAfter: true,
+          },
+          {
+            label: "Gaussian Blur — Vignette",
+            checked: specialEffect.kind === "gaussian-blur" && specialEffect.mode === "vignette",
+            action: () => editor.chooseSpecialEffect("gaussian-blur", "vignette"),
+          },
+          {
+            label: "Gaussian Blur — Draw",
+            checked: specialEffect.kind === "gaussian-blur" && specialEffect.mode === "draw",
+            action: () => editor.chooseSpecialEffect("gaussian-blur", "draw"),
+          },
+          {
+            label: "Pixelate — Uniform",
+            checked: specialEffect.kind === "pixelate" && specialEffect.mode === "uniform",
+            action: () => editor.chooseSpecialEffect("pixelate", "uniform"),
+            separatorAfter: true,
+          },
+          {
+            label: "Pixelate — Vignette",
+            checked: specialEffect.kind === "pixelate" && specialEffect.mode === "vignette",
+            action: () => editor.chooseSpecialEffect("pixelate", "vignette"),
+          },
+          {
+            label: "Pixelate — Draw",
+            checked: specialEffect.kind === "pixelate" && specialEffect.mode === "draw",
+            action: () => editor.chooseSpecialEffect("pixelate", "draw"),
+          },
+        ],
       },
     ],
-    [editor, photo, presetId, pickFile, quickExport, showOriginal, tab],
+    [editor, photo, presetId, pickFile, quickExport, showOriginal, specialEffect.kind, specialEffect.mode, tab],
   );
 
   const detail = photo
     ? `${photo.width}x${photo.height}`
     : "no image";
-  const previewName = PRESET_MAP[presetId]?.name ?? "Custom";
+  const previewName =
+    specialEffect.kind !== "none"
+      ? SPECIAL_EFFECT_LABELS[specialEffect.kind] +
+        " // " +
+        specialEffect.mode[0].toUpperCase() +
+        specialEffect.mode.slice(1)
+      : PRESET_MAP[presetId]?.name ?? "Custom";
   const previewStatus =
     info.phase === "loading"
       ? "[Loading] " + previewName
@@ -299,17 +354,29 @@ export default function App() {
   const panels = (
     <>
       <GroupBox label="Presets">
-        <PresetList presetId={presetId} onPick={editor.applyPreset} onHint={setHint} />
+        <PresetList
+          presetId={presetId}
+          specialEffect={specialEffect}
+          onPick={editor.applyPreset}
+          onChooseSpecialEffect={editor.chooseSpecialEffect}
+          onHint={setHint}
+        />
       </GroupBox>
       <GroupBox label="Effects">
         <EffectsPanel
           params={params}
+          specialEffect={specialEffect}
           onChange={editor.setParam}
           onCommitStart={editor.beginAdjust}
           onCommitEnd={editor.endAdjust}
           onHint={setHint}
           onApply={editor.applyChanges}
           canApply={editor.hasUnappliedChanges}
+          onChooseSpecialEffect={editor.chooseSpecialEffect}
+          onSetSpecialEffectAmount={editor.setSpecialEffectAmount}
+          onSetSpecialEffectBrushSize={editor.setSpecialEffectBrushSize}
+          onClearSpecialEffectMask={editor.clearSpecialEffectMask}
+          onDisableSpecialEffect={editor.disableSpecialEffect}
         />
         <div className="mt-2 flex gap-2 px-[5px] pb-1">
           <Button className="flex-1" onClick={editor.resetAll}>
@@ -407,12 +474,14 @@ export default function App() {
               pan={pan}
               mirror={transform.mirror}
               flipVertical={transform.flipVertical}
+              specialEffect={specialEffect}
               onZoomChange={changeZoom}
               onToggleZoom={toggleZoom}
               onPanChange={changePan}
               onZoomWheel={zoomByWheel}
               onToggleMirror={editor.toggleMirror}
               onToggleFlipVertical={editor.toggleFlipVertical}
+              onDrawStroke={editor.addSpecialEffectStroke}
               onOpen={pickFile}
               onSample={() => void editor.openSample()}
             />
@@ -445,18 +514,30 @@ export default function App() {
             <div className="scroll-thin max-h-[40vh] overflow-y-auto">
               {tab === "presets" ? (
                 <GroupBox label="Presets">
-                  <PresetList presetId={presetId} onPick={editor.applyPreset} onHint={setHint} />
+                  <PresetList
+                    presetId={presetId}
+                    specialEffect={specialEffect}
+                    onPick={editor.applyPreset}
+                    onChooseSpecialEffect={editor.chooseSpecialEffect}
+                    onHint={setHint}
+                  />
                 </GroupBox>
               ) : (
                 <GroupBox label="Effects">
                   <EffectsPanel
                     params={params}
+                    specialEffect={specialEffect}
                     onChange={editor.setParam}
                     onCommitStart={editor.beginAdjust}
                     onCommitEnd={editor.endAdjust}
                     onHint={setHint}
                     onApply={editor.applyChanges}
                     canApply={editor.hasUnappliedChanges}
+                    onChooseSpecialEffect={editor.chooseSpecialEffect}
+                    onSetSpecialEffectAmount={editor.setSpecialEffectAmount}
+                    onSetSpecialEffectBrushSize={editor.setSpecialEffectBrushSize}
+                    onClearSpecialEffectMask={editor.clearSpecialEffectMask}
+                    onDisableSpecialEffect={editor.disableSpecialEffect}
                   />
                   <div className="mt-2 flex gap-2 px-[5px] pb-1">
                     <Button className="flex-1" onClick={editor.resetAll}>
