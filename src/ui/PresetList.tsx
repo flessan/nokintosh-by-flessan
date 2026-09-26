@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { PRESETS } from "../engine/presets";
 
 export function PresetList({
@@ -9,6 +10,8 @@ export function PresetList({
   onPick: (id: string) => void;
   onHint?: (text: string | null) => void;
 }) {
+  const [hovered, setHovered] = useState<string | null>(null);
+
   return (
     <ul
       className="scroll-thin max-h-[38vh] min-h-[120px] overflow-y-auto bg-white lg:max-h-[340px]"
@@ -21,11 +24,22 @@ export function PresetList({
           <li key={p.id} role="option" aria-selected={selected}>
             <button
               type="button"
-              className="ui-item text-[12px] hover:bg-[color:var(--sel)] hover:text-white focus-visible:bg-[color:var(--sel)] focus-visible:text-white"
+              className="ui-item text-[12px]"
+              style={
+                hovered === p.id
+                  ? { backgroundColor: "var(--sel)", color: "#ffffff" }
+                  : undefined
+              }
               aria-pressed={selected}
               onClick={() => onPick(p.id)}
-              onMouseEnter={() => onHint?.(p.note)}
-              onMouseLeave={() => onHint?.(null)}
+              onMouseEnter={() => {
+                setHovered(p.id);
+                onHint?.(p.note);
+              }}
+              onMouseLeave={() => {
+                setHovered(null);
+                onHint?.(null);
+              }}
               onFocus={() => onHint?.(p.note)}
               onBlur={() => onHint?.(null)}
             >
