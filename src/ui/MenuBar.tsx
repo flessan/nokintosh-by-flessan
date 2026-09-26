@@ -18,6 +18,7 @@ export interface Menu {
 export function MenuBar({ menus }: { menus: Menu[] }) {
   const [open, setOpen] = useState<number | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [hoveredMenu, setHoveredMenu] = useState<number | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -49,10 +50,17 @@ export function MenuBar({ menus }: { menus: Menu[] }) {
             role="menuitem"
             aria-haspopup="true"
             aria-expanded={open === i}
-            className={
-              "px-[9px] py-[3px] text-[12px] " +
-              (open === i ? "bg-[color:var(--sel)] text-white" : "hover:bg-[color:var(--sel)] hover:text-white")
+            className="px-[9px] py-[3px] text-[12px]"
+            style={
+              open === i || hoveredMenu === i
+                ? { backgroundColor: "var(--sel)", color: "#ffffff" }
+                : undefined
             }
+            onPointerEnter={() => {
+              setHoveredMenu(i);
+              if (open !== null) setOpen(i);
+            }}
+            onPointerLeave={() => setHoveredMenu(null)}
             onPointerDown={(e) => {
               e.preventDefault();
               setOpen(open === i ? null : i);
