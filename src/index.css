@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -27,9 +28,9 @@ body {
   margin: 0;
   background: var(--desktop);
   color: var(--ink);
-  font-family: Tahoma, Verdana, "Segoe UI", "MS Sans Serif", system-ui, sans-serif;
-  font-size: 12px;
-  line-height: 1.35;
+  font-family: "Press Start 2P", Tahoma, Verdana, "Segoe UI", "MS Sans Serif", system-ui, sans-serif;
+  font-size: 10px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior: none;
@@ -37,7 +38,7 @@ body {
 
 @media (max-width: 860px) {
   body {
-    font-size: 13px;
+    font-size: 11px;
   }
 }
 
@@ -150,7 +151,13 @@ textarea {
 }
 
 .ui-item:hover:not([aria-pressed="true"]) {
-  background: #e7e4df;
+  background: var(--sel);
+  color: #ffffff;
+}
+
+.ui-tab:hover:not([data-pressed="true"]) {
+  background: var(--sel);
+  color: #ffffff;
 }
 
 .ui-item[aria-pressed="true"] {
