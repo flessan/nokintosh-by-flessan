@@ -72,6 +72,8 @@ export function EffectsPanel({
   onCommitStart,
   onCommitEnd,
   onHint,
+  onApply,
+  canApply,
   disabled,
 }: {
   params: EffectParams;
@@ -79,6 +81,8 @@ export function EffectsPanel({
   onCommitStart: () => void;
   onCommitEnd: () => void;
   onHint?: (text: string | null) => void;
+  onApply: () => void;
+  canApply: boolean;
   disabled?: boolean;
 }) {
   const groups: ControlDef["group"][] = ["core", "optics", "tone"];
@@ -108,6 +112,20 @@ export function EffectsPanel({
           ))}
         </div>
       ))}
+
+      <div className="mt-2 border-t border-[color:var(--shadow)] px-[5px] pt-2">
+        <button
+          type="button"
+          className="ui-btn w-full font-bold"
+          disabled={disabled || !canApply}
+          onClick={onApply}
+        >
+          Apply
+        </button>
+        <div className="mt-1 text-center text-[10px] text-[color:var(--ink-dim)]">
+          Ctrl+Enter
+        </div>
+      </div>
     </div>
   );
 }
