@@ -279,11 +279,11 @@ export default function App() {
     <div className="flex h-[100dvh] w-full justify-center bg-[color:var(--desktop)] lg:items-center lg:p-4">
       <div className="bevel-raised flex h-full w-full max-w-[1440px] flex-col p-[3px] lg:h-[min(940px,100%)]">
         {/* ---- title bar ---- */}
-        <div className="title-bar shrink-0">
+        <div className="title-bar shrink-0 overflow-hidden">
           <span className="mr-2 flex items-center">
             <CameraMark />
           </span>
-          <h1 className="flex-1 truncate text-[12px] font-bold">
+          <h1 className="min-w-0 flex-1 truncate text-[12px] font-bold">
             Nokintosh // Digicam Utility
             {photo ? ` // ${photo.name}` : ""}
           </h1>
@@ -293,9 +293,9 @@ export default function App() {
             rel="noreferrer noopener"
             aria-label="Source repository on GitHub"
             title="GitHub"
-            className="ui-btn h-[18px] min-h-0 w-[20px] px-0 py-0"
+            className="github-link shrink-0"
           >
-            <GithubIcon size={24} />
+            <GithubIcon size={16} />
           </a>
         </div>
 
