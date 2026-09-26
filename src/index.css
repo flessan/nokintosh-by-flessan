@@ -28,7 +28,7 @@ body {
   margin: 0;
   background: var(--desktop);
   color: var(--ink);
-  font-family: "Press Start 2P", Tahoma, Verdana, "Segoe UI", "MS Sans Serif", system-ui, sans-serif;
+  font-family: "Press Start 2P", "Courier New", Tahoma, Verdana, "Segoe UI", "MS Sans Serif", monospace;
   font-size: 10px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -150,9 +150,11 @@ textarea {
   border: 1px solid transparent;
 }
 
+.ui-item:hover,
+.ui-item:focus-visible,
 .ui-item:hover:not([aria-pressed="true"]) {
-  background: var(--sel);
-  color: #ffffff;
+  background: var(--sel) !important;
+  color: #ffffff !important;
 }
 
 .ui-tab:hover:not([data-pressed="true"]) {
