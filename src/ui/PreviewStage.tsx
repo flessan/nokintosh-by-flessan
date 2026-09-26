@@ -27,19 +27,10 @@ export function PreviewStage({
         ref={stageRef}
         className="workspace relative flex h-full w-full items-center justify-center overflow-hidden"
       >
-        {photo && (
-          <img
-            src={photo.displayUrl}
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute max-h-full max-w-full object-contain"
-          />
-        )}
-
         <canvas
           ref={canvasRef}
           className={
-            "preview-canvas nodrag block max-h-full max-w-full " + (photo ? "opacity-100" : "pointer-events-none opacity-0 absolute")
+            "nodrag block max-h-full max-w-full " + (photo ? "opacity-100" : "pointer-events-none opacity-0 absolute")
           }
           aria-label={photo ? `Preview of ${photo.name}` : "Photo preview"}
         />
