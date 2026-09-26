@@ -138,7 +138,8 @@ export class CanvasRenderer implements Renderer {
       p.temperature === 0 &&
       p.exposure === 0 &&
       p.contrast === 0 &&
-      p.saturation === 0;
+      p.saturation === 0 &&
+      filter === "none";
 
     if (neutral) {
       this.ctx.clearRect(0, 0, w, h);
