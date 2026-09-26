@@ -1,5 +1,6 @@
 import { createRenderer, fitWithin, type ImageSource } from "./renderer";
 import type { EffectParams, FilterMode } from "./types";
+import { applyFrame } from "./frame";
 import { applyCanvasTransform, IDENTITY_TRANSFORM, type ImageTransform } from "./transform";
 
 export type ExportFormat = "avif" | "webp" | "png";
@@ -71,9 +72,10 @@ export async function exportImage(
   srcWidth: number,
   srcHeight: number,
   params: EffectParams,
+  options: ExportOptions,
   filter: FilterMode = "none",
   transform: ImageTransform = IDENTITY_TRANSFORM,
-  options: ExportOptions,
+  frame: "none" | "collage" = "none",
 ): Promise<ExportResult> {
   const canvas = document.createElement("canvas");
   const renderer = createRenderer(canvas);
@@ -87,6 +89,7 @@ export async function exportImage(
     renderer.resize(width, height);
     renderer.render(params, filter);
     applyCanvasTransform(canvas, transform);
+    applyFrame(canvas, frame);
 
     let format = options.format;
     let fellBack = false;
