@@ -34,7 +34,7 @@ const DIRECT_PRESETS = PRESETS.filter(
 const ORIGINAL = PRESETS.find((preset) => preset.id === "none")!;
 
 const MODES: SpecialEffectMode[] = ["uniform", "vignette", "draw"];
-const SPECIAL_KINDS: SpecialEffectKind[] = ["gaussian-blur", "pixelate"];
+const SPECIAL_KINDS = ["gaussian-blur", "pixelate"] as const;
 
 export function PresetList({
   presetId,
