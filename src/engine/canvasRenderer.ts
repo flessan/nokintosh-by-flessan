@@ -299,27 +299,31 @@ export class CanvasRenderer implements Renderer {
       const block = Math.max(4, Math.round(8 * scale));
       const qLuma = 0.0025 + p.jpeg * p.jpeg * 0.055;
       const qChroma = 0.008 + p.jpeg * 0.085;
+      const preJpeg = new Uint8ClampedArray(d);
 
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const i = pixelIndex(x, y, w);
-          const bx = Math.floor(x / block) * block;
-          const by = Math.floor(y / block) * block;
-
+      // Work block-by-block so the expensive block statistics are calculated
+      // once instead of once per pixel.
+      for (let by = 0; by < h; by += block) {
+        for (let bx = 0; bx < w; bx += block) {
           const sx0 = Math.min(w - 1, bx + Math.floor(block * 0.25));
           const sx1 = Math.min(w - 1, bx + Math.floor(block * 0.75));
           const sy0 = Math.min(h - 1, by + Math.floor(block * 0.25));
           const sy1 = Math.min(h - 1, by + Math.floor(block * 0.75));
 
-          const samples = [pixelIndex(sx0, sy0, w), pixelIndex(sx1, sy0, w), pixelIndex(sx0, sy1, w), pixelIndex(sx1, sy1, w)];
+          const s0 = pixelIndex(sx0, sy0, w);
+          const s1 = pixelIndex(sx1, sy0, w);
+          const s2 = pixelIndex(sx0, sy1, w);
+          const s3 = pixelIndex(sx1, sy1, w);
+          const samples = [s0, s1, s2, s3];
+
           let yMean = 0;
           let cbMean = 0;
           let crMean = 0;
 
           for (const si of samples) {
-            const sr = d[si] / 255;
-            const sg = d[si + 1] / 255;
-            const sb = d[si + 2] / 255;
+            const sr = preJpeg[si] / 255;
+            const sg = preJpeg[si + 1] / 255;
+            const sb = preJpeg[si + 2] / 255;
             yMean += 0.299 * sr + 0.587 * sg + 0.114 * sb;
             cbMean += -0.168736 * sr - 0.331264 * sg + 0.5 * sb;
             crMean += 0.5 * sr - 0.418688 * sg - 0.081312 * sb;
@@ -329,27 +333,36 @@ export class CanvasRenderer implements Renderer {
           cbMean *= 0.25;
           crMean *= 0.25;
 
-          const r0 = d[i] / 255;
-          const g0 = d[i + 1] / 255;
-          const b0 = d[i + 2] / 255;
+          const maxX = Math.min(w, bx + block);
+          const maxY = Math.min(h, by + block);
 
-          let yy = 0.299 * r0 + 0.587 * g0 + 0.114 * b0;
-          let cb = -0.168736 * r0 - 0.331264 * g0 + 0.5 * b0;
-          let cr = 0.5 * r0 - 0.418688 * g0 - 0.081312 * b0;
+          for (let y = by; y < maxY; y++) {
+            for (let x = bx; x < maxX; x++) {
+              const i = pixelIndex(x, y, w);
+              const r0 = preJpeg[i] / 255;
+              const g0 = preJpeg[i + 1] / 255;
+              const b0 = preJpeg[i + 2] / 255;
 
-          yy = Math.round((yy + (yMean - yy) * p.jpeg * 0.45) / qLuma) * qLuma;
-          cb = Math.round((cb + (cbMean - cb) * p.jpeg) / qChroma) * qChroma;
-          cr = Math.round((cr + (crMean - cr) * p.jpeg) / qChroma) * qChroma;
+              let yy = 0.299 * r0 + 0.587 * g0 + 0.114 * b0;
+              let cb = -0.168736 * r0 - 0.331264 * g0 + 0.5 * b0;
+              let cr = 0.5 * r0 - 0.418688 * g0 - 0.081312 * b0;
 
-          // Faint block-boundary ringing/seam.
-          const fx = (x % block) / block;
-          const fy = (y % block) / block;
-          const edge = Math.min(fx, fy, 1 - fx, 1 - fy);
-          yy *= 1 - Math.max(0, 0.018 - edge * 0.018) * p.jpeg;
+              // Quantise luma while pulling chroma toward the block average.
+              yy = Math.round((yy + (yMean - yy) * p.jpeg * 0.45) / qLuma) * qLuma;
+              cb = Math.round((cb + (cbMean - cb) * p.jpeg) / qChroma) * qChroma;
+              cr = Math.round((cr + (crMean - cr) * p.jpeg) / qChroma) * qChroma;
 
-          d[i] = Math.round(clamp01(yy + 1.402 * cr) * 255);
-          d[i + 1] = Math.round(clamp01(yy - 0.344136 * cb - 0.714136 * cr) * 255);
-          d[i + 2] = Math.round(clamp01(yy + 1.772 * cb) * 255);
+              // Slight block-edge ringing/seam.
+              const fx = (x - bx) / block;
+              const fy = (y - by) / block;
+              const edge = Math.min(fx, fy, 1 - fx, 1 - fy);
+              yy *= 1 - Math.max(0, 0.018 - edge * 0.018) * p.jpeg;
+
+              d[i] = Math.round(clamp01(yy + 1.402 * cr) * 255);
+              d[i + 1] = Math.round(clamp01(yy - 0.344136 * cb - 0.714136 * cr) * 255);
+              d[i + 2] = Math.round(clamp01(yy + 1.772 * cb) * 255);
+            }
+          }
         }
       }
     }
