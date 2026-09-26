@@ -469,7 +469,7 @@ export default function App() {
               showOriginal={showOriginal}
               loading={editor.loading}
               rendering={info.phase === "loading"}
-              presetName={PRESET_MAP[presetId]?.name ?? "Custom"}
+              presetName={previewName}
               zoom={zoom}
               pan={pan}
               mirror={transform.mirror}
