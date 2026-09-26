@@ -1,5 +1,5 @@
 import { CanvasRenderer } from "./canvasRenderer";
-import type { EffectParams } from "./types";
+import type { EffectParams, FilterMode } from "./types";
 
 /** Anything the engine can accept as decoded pixels. */
 export type ImageSource = ImageBitmap | HTMLImageElement | HTMLCanvasElement;
@@ -12,7 +12,7 @@ export interface Renderer {
   srcHeight: number;
   setSource(source: ImageSource, width: number, height: number): void;
   resize(width: number, height: number): void;
-  render(params: EffectParams): void;
+  render(params: EffectParams, filter?: FilterMode): void;
   dispose(): void;
 }
 
