@@ -11,6 +11,7 @@ export function PreviewStage({
   showOriginal,
   loading,
   rendering,
+  presetName,
   zoom,
   pan,
   onZoomChange,
@@ -27,6 +28,7 @@ export function PreviewStage({
   showOriginal: boolean;
   loading: boolean;
   rendering: boolean;
+  presetName: string;
   zoom: number;
   pan: { x: number; y: number };
   onZoomChange: (value: number) => void;
@@ -145,7 +147,7 @@ export function PreviewStage({
 
         {photo && (
           <div
-            className="pointer-events-none absolute bottom-2 left-2 z-10 flex items-center gap-2 bevel-raised bg-[color:var(--face)] px-2 py-1 opacity-0 shadow-[2px_2px_0_0_rgba(0,0,0,0.3)] transition-opacity group-hover:opacity-100"
+            className="pointer-events-none group-hover:pointer-events-auto absolute bottom-2 left-2 z-10 flex items-center gap-2 bevel-raised bg-[color:var(--face)] px-2 py-1 opacity-0 shadow-[2px_2px_0_0_rgba(0,0,0,0.3)] transition-opacity group-hover:opacity-100"
             aria-label="Preview zoom controls"
           >
             <span className="shrink-0 text-[11px] font-bold">{zoomLabel}</span>
@@ -176,7 +178,7 @@ export function PreviewStage({
         {photo && rendering && (
           <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-black/15">
             <div className="bevel-raised px-4 py-2 text-[12px] font-bold shadow-[2px_2px_0_0_rgba(0,0,0,0.35)]">
-              [Loading] {zoomLabel === zoomLabel ? "" : ""}
+              [Loading] {presetName}
               <span className="ml-1 font-normal">Rendering preview...</span>
             </div>
           </div>
