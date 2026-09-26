@@ -17,10 +17,16 @@ export interface Renderer {
   dispose(): void;
 }
 
-/** Creates the best available renderer for a canvas element. */
+/**
+ * Creates a reliable renderer for a canvas element.
+ *
+ * A canvas can only have one rendering context. Trying WebGL first and then
+ * falling back to 2D on the same canvas is not valid because a failed WebGL
+ * context still claims the canvas. Keep the interactive renderer on Canvas 2D
+ * for maximum browser compatibility; the WebGL renderer remains available as
+ * an independent engine for a future offscreen/capability-tested path.
+ */
 export function createRenderer(canvas: HTMLCanvasElement): Renderer {
-  const gl = GLRenderer.create(canvas);
-  if (gl) return gl;
   return new CanvasRenderer(canvas);
 }
 
