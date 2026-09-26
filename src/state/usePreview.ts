@@ -57,6 +57,7 @@ export function usePreview(
   params: EffectParams,
   presetId: string,
   showOriginal: boolean,
+  cacheCustom: boolean,
 ) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -152,7 +153,7 @@ export function usePreview(
   }
 
   function cacheKey(bw: number, bh: number) {
-    if (!photo || presetRef.current === "custom") return null;
+    if (!photo || (presetRef.current === "custom" && !cacheCustom)) return null;
     return [
       presetRef.current,
       bw,
@@ -306,7 +307,7 @@ export function usePreview(
   useEffect(() => {
     schedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, presetId, box.w, box.h, showOriginal, photo]);
+  }, [params, presetId, box.w, box.h, showOriginal, photo, cacheCustom]);
 
   useEffect(() => {
     return () => {
