@@ -290,3 +290,9 @@ input[type="range"].ui-range::-moz-range-thumb {
   -webkit-user-drag: none;
   user-select: none;
 }
+
+
+.preview-canvas {
+  position: relative;
+  z-index: 1;
+}
