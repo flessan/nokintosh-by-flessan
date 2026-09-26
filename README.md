@@ -15,12 +15,13 @@ Open → Add photo → Pick a look → Adjust a few controls → Export AVIF
 ## Features
 
 - WebGL2 rendering pipeline with a Canvas 2D fallback
-- Data-driven preset library (21 looks)
+- Data-driven preset library (22 looks)
 - 14 controls grouped as Core / Optics / Tone
 - File picker, drag & drop and clipboard paste input
 - Hold-to-compare against the original, explicit Apply workflow, plus undo / redo and reset
 - AVIF export (first-class), with WebP and PNG as secondary formats
 - Installable PWA, works offline after first load
+- Click-to-zoom preview, mouse-wheel zoom and classic zoom slider
 
 ## Local development
 
