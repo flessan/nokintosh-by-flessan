@@ -1,97 +1,150 @@
-import { DEFAULT_PARAMS, type EffectParams, type Preset } from "./types";
+import {
+  DEFAULT_PARAMS,
+  type EffectParams,
+  type FilterMode,
+  type Preset,
+} from "./types";
 
 /**
- * Preset library based on recognisable early-digital-camera character:
- * CCD-era compacts, consumer point-and-shoots, small flash cameras and
- * early camera phones. These are look profiles, not claims of exact hardware
- * calibration for a specific camera body.
+ * Preset library:
+ * - generic digital filters live under the Filters menu
+ * - very small / phone-era profiles live under Camera 2
+ * - identifiable compact-camera families remain directly visible
+ *
+ * These are character profiles, not exact color-science recreations of a
+ * particular production unit.
  */
-function preset(id: string, name: string, note: string, params: Partial<EffectParams>): Preset {
-  return { id, name, note, params: { ...DEFAULT_PARAMS, ...params } };
+function preset(
+  id: string,
+  name: string,
+  note: string,
+  params: Partial<EffectParams>,
+  filter: FilterMode = "none",
+): Preset {
+  return {
+    id,
+    name,
+    note,
+    params: { ...DEFAULT_PARAMS, ...params },
+    filter,
+  };
 }
 
 export const PRESETS: Preset[] = [
   preset("none", "Original", "No processing applied.", {}),
 
+  // Reference-style generic filters.
   preset(
     "jpeg",
     "JPEG",
-    "Low-quality digital JPEG: chunky compression, chroma bleed and camera sharpening.",
+    "Low-quality digital JPEG: block structure, chroma bleed and crisp camera sharpening.",
     {
-      grain: 0.18,
-      jpeg: 0.92,
-      colorShift: 0.24,
-      vignette: 0.08,
-      softness: 0.08,
-      sharpen: 0.58,
-      aberration: 0.08,
-      fade: 0.05,
-      contrast: 0.18,
-      saturation: 0.06,
+      grain: 0.16,
+      jpeg: 0.9,
+      colorShift: 0.22,
+      vignette: 0.06,
+      softness: 0.05,
+      sharpen: 0.6,
+      aberration: 0.06,
     },
   ),
-
   preset(
-    "filters",
-    "Filters",
-    "A punchier all-purpose digital filter with stronger colour and contrast.",
+    "bw",
+    "B&W",
+    "Monochrome digital conversion with a little extra tonal separation.",
     {
       grain: 0.08,
-      jpeg: 0.12,
-      colorShift: 0.3,
-      vignette: 0.1,
-      softness: 0.04,
-      sharpen: 0.46,
-      bloom: 0.1,
-      aberration: 0.06,
-      contrast: 0.24,
-      saturation: 0.28,
-      temperature: 0.06,
+      jpeg: 0.08,
+      contrast: 0.12,
+      sharpen: 0.18,
     },
+    "bw",
+  ),
+  preset(
+    "sepia",
+    "Sepia",
+    "Warm brown monochrome conversion with restrained digital texture.",
+    {
+      grain: 0.08,
+      jpeg: 0.08,
+      contrast: 0.08,
+      sharpen: 0.12,
+    },
+    "sepia",
+  ),
+  preset(
+    "negative",
+    "Negative",
+    "Digital negative/inverted colour treatment.",
+    {
+      grain: 0.04,
+      jpeg: 0.06,
+    },
+    "negative",
+  ),
+  preset(
+    "warm-filter",
+    "Warm",
+    "Simple warm colour filter without film grain or fake vintage toning.",
+    { contrast: 0.08, saturation: 0.05 },
+    "warm",
+  ),
+  preset(
+    "cool-filter",
+    "Cool",
+    "Simple cool colour filter with a clean digital balance.",
+    { contrast: 0.06, saturation: 0.04 },
+    "cool",
+  ),
+  preset(
+    "high-contrast",
+    "High Contrast",
+    "Punchy digital contrast with clipped highlights and deeper blacks.",
+    { contrast: 0.08, saturation: 0.08, sharpen: 0.2 },
+    "high-contrast",
   ),
 
+  // Non-filter reference looks.
   preset(
     "collage",
     "Collage",
-    "Soft consumer-digital treatment intended as a base for collage-style shots.",
+    "Soft consumer-digital base with slightly lifted colour and gentle texture.",
     {
-      grain: 0.3,
-      jpeg: 0.38,
-      colorShift: 0.46,
-      vignette: 0.18,
-      softness: 0.2,
-      sharpen: 0.38,
-      bloom: 0.16,
-      aberration: 0.14,
-      fade: 0.12,
-      contrast: 0.08,
-      saturation: 0.2,
-      temperature: 0.12,
+      grain: 0.24,
+      jpeg: 0.28,
+      colorShift: 0.42,
+      vignette: 0.12,
+      softness: 0.18,
+      sharpen: 0.3,
+      bloom: 0.1,
+      aberration: 0.1,
+      fade: 0.08,
+      contrast: 0.04,
+      saturation: 0.16,
+      temperature: 0.08,
     },
   ),
-
   preset(
     "blur-pixelate",
     "Blur/Pixelate",
-    "Small-sensor softness with visible digital blocking and reduced detail.",
+    "Small-sensor softness with obvious digital blocking and reduced detail.",
     {
-      grain: 0.36,
-      jpeg: 0.78,
-      colorShift: 0.4,
-      vignette: 0.16,
+      grain: 0.32,
+      jpeg: 0.74,
+      colorShift: 0.38,
+      vignette: 0.12,
       softness: 0.58,
-      sharpen: 0.12,
-      aberration: 0.18,
-      fade: 0.16,
-      contrast: 0.04,
-      saturation: -0.06,
+      sharpen: 0.1,
+      aberration: 0.16,
+      fade: 0.14,
+      contrast: 0.02,
+      saturation: -0.04,
     },
   ),
-
   preset(
     "ccd",
     "CCD",
-    "Classic CCD compact-camera colour: vivid channels, slight crosstalk and crisp edges.",
+    "Classic CCD compact character: lively channels, crosstalk, crisp edges and a little bloom.",
     {
       grain: 0.24,
       jpeg: 0.28,
@@ -108,10 +161,11 @@ export const PRESETS: Preset[] = [
     },
   ),
 
+  // Camera 2 group.
   preset(
     "nokia",
     "Nokia",
-    "Early Nokia camera-phone look: tiny sensor, soft detail, noisy shadows and JPEG damage.",
+    "Early Nokia camera-phone character: tiny sensor, soft detail and noisy shadows.",
     {
       grain: 0.72,
       jpeg: 0.72,
@@ -127,11 +181,10 @@ export const PRESETS: Preset[] = [
       saturation: -0.14,
     },
   ),
-
   preset(
     "quarter-inch",
     '1/4"',
-    "Tiny 1/4-inch-class sensor character: weak dynamic range, softness and noisy shadows.",
+    "Tiny 1/4-inch-class sensor: weak dynamic range, softness and noisy shadow detail.",
     {
       grain: 0.64,
       jpeg: 0.58,
@@ -148,11 +201,10 @@ export const PRESETS: Preset[] = [
       saturation: -0.08,
     },
   ),
-
   preset(
     "iphone-3gs",
     "iPhone3gs",
-    "Early smartphone camera: soft daylight, limited dynamic range and crunchy JPEG colour.",
+    "Early smartphone camera: soft detail, limited dynamic range and crunchy JPEG colour.",
     {
       grain: 0.52,
       jpeg: 0.5,
@@ -170,10 +222,11 @@ export const PRESETS: Preset[] = [
     },
   ),
 
+  // Identifiable compact-camera families.
   preset(
     "sony-cybershot",
     "Sony Cyber-shot",
-    "Cool CCD colour, crisp JPEG detail and a slightly blue daylight balance.",
+    "Compact CCD character: cool daylight balance, crisp edges and moderate JPEG texture.",
     {
       grain: 0.22,
       jpeg: 0.24,
@@ -189,11 +242,10 @@ export const PRESETS: Preset[] = [
       saturation: 0.16,
     },
   ),
-
   preset(
     "canon-powershot",
     "Canon PowerShot",
-    "Warm skin tones, punchy contrast and familiar early-2000s compact sharpness.",
+    "Consumer compact look with warm skin bias, punchy contrast and clear in-camera sharpening.",
     {
       grain: 0.25,
       jpeg: 0.22,
@@ -210,11 +262,10 @@ export const PRESETS: Preset[] = [
       saturation: 0.22,
     },
   ),
-
   preset(
     "canon-ixus",
     "Canon Digital IXUS",
-    "Tiny-pocket flash camera: clean daylight, hard direct flash and clipped highlights.",
+    "Small metal-pocket compact character with direct flash, clean daylight and clipped highlights.",
     {
       grain: 0.2,
       jpeg: 0.28,
@@ -231,11 +282,10 @@ export const PRESETS: Preset[] = [
       saturation: 0.14,
     },
   ),
-
   preset(
     "nikon-coolpix",
     "Nikon COOLPIX",
-    "Neutral-to-cool CCD, deeper shadows, strong edge processing and modest grain.",
+    "Cool-to-neutral CCD rendering with deep shadows and strong consumer-camera sharpening.",
     {
       grain: 0.28,
       jpeg: 0.3,
@@ -251,11 +301,10 @@ export const PRESETS: Preset[] = [
       saturation: 0.08,
     },
   ),
-
   preset(
     "fujifilm-finepix",
     "Fujifilm FinePix",
-    "Soft CCD rendering with lively greens, blue skies and a gentle highlight glow.",
+    "Soft CCD response with lively greens, blue daylight and gentle highlight glow.",
     {
       grain: 0.24,
       jpeg: 0.2,
@@ -272,11 +321,10 @@ export const PRESETS: Preset[] = [
       saturation: 0.3,
     },
   ),
-
   preset(
     "casio-exilim",
     "Casio Exilim",
-    "Bright pocket-camera processing: saturated colour, crisp edges and clean faces.",
+    "Bright pocket-camera processing with saturated colour and pronounced edge sharpening.",
     {
       grain: 0.14,
       jpeg: 0.18,
@@ -292,11 +340,10 @@ export const PRESETS: Preset[] = [
       saturation: 0.3,
     },
   ),
-
   preset(
     "olympus-camedia",
     "Olympus CAMEDIA",
-    "Warm consumer CCD with greenish shadows, visible JPEG texture and soft corners.",
+    "Warm consumer CCD with soft corners, greenish shadow drift and visible JPEG texture.",
     {
       grain: 0.3,
       jpeg: 0.38,
@@ -313,11 +360,10 @@ export const PRESETS: Preset[] = [
       saturation: 0.16,
     },
   ),
-
   preset(
     "panasonic-lumix",
     "Panasonic Lumix",
-    "Cooler compact colour, high micro-contrast and a slightly clinical digital finish.",
+    "Cooler compact rendering with high micro-contrast and a clean digital finish.",
     {
       grain: 0.18,
       jpeg: 0.22,
@@ -332,11 +378,10 @@ export const PRESETS: Preset[] = [
       saturation: 0.12,
     },
   ),
-
   preset(
     "kodak-easyshare",
     "Kodak EasyShare",
-    "Warm yellow bias, forgiving highlights and the unmistakable consumer JPEG crunch.",
+    "Warm consumer colour, mild highlight bloom and familiar JPEG crunch.",
     {
       grain: 0.3,
       jpeg: 0.36,
@@ -353,11 +398,10 @@ export const PRESETS: Preset[] = [
       saturation: 0.2,
     },
   ),
-
   preset(
     "pentax-optio",
     "Pentax Optio",
-    "Small-sensor compact look: soft detail, slightly odd white balance and muddy blacks.",
+    "Small-sensor compact look with soft detail, muddy blacks and imperfect white balance.",
     {
       grain: 0.34,
       jpeg: 0.44,
@@ -373,11 +417,10 @@ export const PRESETS: Preset[] = [
       saturation: 0.04,
     },
   ),
-
   preset(
     "samsung-digimax",
     "Samsung Digimax",
-    "Budget compact character with green-magenta colour errors and chunky JPEG detail.",
+    "Budget compact colour errors, chunky JPEG texture and visible small-sensor noise.",
     {
       grain: 0.42,
       jpeg: 0.56,
@@ -393,7 +436,6 @@ export const PRESETS: Preset[] = [
       saturation: 0.08,
     },
   ),
-
   preset(
     "early-camera-phone",
     "Early Camera Phone",
@@ -414,11 +456,10 @@ export const PRESETS: Preset[] = [
       saturation: -0.12,
     },
   ),
-
   preset(
     "night-flash-compact",
     "Night Flash Compact",
-    "2000s party snapshot: direct flash, black backgrounds, blown skin and sensor noise.",
+    "Direct-flash party snapshot: dark backgrounds, clipped near-field highlights and sensor noise.",
     {
       grain: 0.5,
       jpeg: 0.42,
@@ -435,7 +476,6 @@ export const PRESETS: Preset[] = [
       saturation: 0.02,
     },
   ),
-
 ];
 
 export const PRESET_MAP: Record<string, Preset> = Object.fromEntries(
