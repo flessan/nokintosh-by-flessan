@@ -70,7 +70,7 @@ export function usePreview(photo: LoadedPhoto | null, params: EffectParams, show
   useEffect(() => {
     const r = rendererRef.current;
     if (!r || !photo) return;
-    r.setSource(photo.preview, photo.previewWidth ?? photo.width, photo.previewHeight ?? photo.height);
+    r.setSource(photo.preview, photo.preview.width, photo.preview.height);
     schedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photo]);
