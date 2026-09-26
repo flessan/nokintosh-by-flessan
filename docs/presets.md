@@ -52,3 +52,10 @@ you only describe what the look actually changes.
 ## Preview cache
 
 Preset previews are cached per photo and output size after their first render. The cache uses a small least-recently-used window, so revisiting recent presets restores their pixels without rerunning the full CPU pipeline.
+
+
+## Preset groups
+
+The UI separates generic image filters from camera-character profiles. The **Filters** submenu contains B&W, Sepia, Negative, Warm, Cool and High Contrast. **Camera 2** contains the small-sensor/early-phone profiles Nokia, 1/4" and iPhone3gs. Other compact-camera profiles remain directly visible.
+
+Preset transforms are separate from the filter look and are committed through the same Apply/Undo workflow.
