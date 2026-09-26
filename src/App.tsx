@@ -39,9 +39,9 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement | null>(null);
   const dragDepth = useRef(0);
 
-  const { photo, params, presetId, filter, transform } = editor;
+  const { photo, params, presetId, filter, frame, transform } = editor;
   const cacheCustom = !editor.hasUnappliedChanges;
-  const { canvasRef, stageRef, info } = usePreview(photo, params, presetId, filter, showOriginal, cacheCustom);
+  const { canvasRef, stageRef, info } = usePreview(photo, params, presetId, filter, frame, transform, showOriginal, cacheCustom);
 
   // ---------- file input ----------
   const pickFile = useCallback(() => fileInput.current?.click(), []);
@@ -115,9 +115,10 @@ export default function App() {
           photo.width,
           photo.height,
           params,
+          options,
           filter,
           transform,
-          options,
+          frame,
         );
         const presetName = PRESET_MAP[presetId]?.name ?? "custom";
         const name = buildFilename(photo.name, presetName, result.format);
@@ -133,7 +134,7 @@ export default function App() {
         setExporting(false);
       }
     },
-    [editor, exporting, params, photo, presetId],
+    [editor, exporting, filter, frame, params, photo, presetId, transform],
   );
 
   const quickExport = useCallback(() => {
