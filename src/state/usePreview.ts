@@ -105,7 +105,30 @@ export function usePreview(photo: LoadedPhoto | null, params: EffectParams, show
 
     const t0 = performance.now();
     r.resize(bw, bh);
-    r.render(originalRef.current ? DEFAULT_PARAMS : paramsRef.current);
+
+    try {
+      if (originalRef.current) {
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Preview canvas context unavailable.");
+        ctx.clearRect(0, 0, bw, bh);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(photo.preview as CanvasImageSource, 0, 0, bw, bh);
+      } else {
+        r.render(paramsRef.current);
+      }
+    } catch (error) {
+      // Never leave the editor visually blank because an effect failed.
+      // Show the decoded preview and keep the UI usable.
+      console.error("Nokintosh preview renderer failed:", error);
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, bw, bh);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(photo.preview as CanvasImageSource, 0, 0, bw, bh);
+      }
+    }
     const dt = performance.now() - t0;
     setInfo((i) =>
       i.previewWidth === bw && i.previewHeight === bh && Math.abs(i.lastRenderMs - dt) < 0.8
