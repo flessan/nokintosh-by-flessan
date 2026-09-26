@@ -50,7 +50,7 @@ export function MenuBar({ menus }: { menus: Menu[] }) {
             aria-expanded={open === i}
             className={
               "px-[9px] py-[3px] text-[12px] " +
-              (open === i ? "bg-[color:var(--sel)] text-white" : "hover:bg-[#e7e4df]")
+              (open === i ? "bg-[color:var(--sel)] text-white" : "hover:bg-[color:var(--sel)] hover:text-white")
             }
             onPointerDown={(e) => {
               e.preventDefault();
