@@ -49,22 +49,14 @@ async function decode(blob: Blob): Promise<Decoded> {
 /** Builds a smaller copy so the preview never uploads a 26 MP texture. */
 async function makePreview(source: Decoded): Promise<ImageSource> {
   const { width, height } = fitWithin(source.width, source.height, PREVIEW_SOURCE_MAX);
-  if (width === source.width && height === source.height) return source;
-  if ("createImageBitmap" in window) {
-    try {
-      return await createImageBitmap(source as ImageBitmap, {
-        resizeWidth: width,
-        resizeHeight: height,
-        resizeQuality: "high",
-      });
-    } catch {
-      /* fall through to canvas scaling */
-    }
-  }
+  // Always normalize the interactive source to a real 2D canvas. This avoids
+  // browser-specific ImageBitmap upload/context edge cases in the renderer.
   const c = document.createElement("canvas");
   c.width = width;
   c.height = height;
-  const ctx = c.getContext("2d")!;
+  const ctx = c.getContext("2d");
+  if (!ctx) throw new Error("Could not create preview canvas.");
+  ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(source as CanvasImageSource, 0, 0, width, height);
   return c;
