@@ -7,7 +7,7 @@ import {
   SAMPLE_IMAGE_URL,
   type LoadedPhoto,
 } from "../engine/image";
-import { PRESET_MAP, PRESETS } from "../engine/presets";
+import { paramsEqual, PRESET_MAP, PRESETS } from "../engine/presets";
 import { DEFAULT_PARAMS, type EffectParams, type ParamId } from "../engine/types";
 
 interface Snapshot {
@@ -17,10 +17,21 @@ interface Snapshot {
 
 const MAX_HISTORY = 40;
 
+const INITIAL_PARAMS = { ...PRESETS[1].params };
+const INITIAL_PRESET_ID = PRESETS[1].id;
+
 export function useEditor() {
   const [photo, setPhoto] = useState<LoadedPhoto | null>(null);
-  const [params, setParams] = useState<EffectParams>({ ...PRESETS[1].params });
-  const [presetId, setPresetId] = useState<string>(PRESETS[1].id);
+
+  // params/presetId are the live draft shown in the preview.
+  const [params, setParams] = useState<EffectParams>({ ...INITIAL_PARAMS });
+  const [presetId, setPresetId] = useState<string>(INITIAL_PRESET_ID);
+
+  // applied* are the last explicitly committed settings. Apply turns this
+  // draft into one undoable history step.
+  const [appliedParams, setAppliedParams] = useState<EffectParams>({ ...INITIAL_PARAMS });
+  const [appliedPresetId, setAppliedPresetId] = useState<string>(INITIAL_PRESET_ID);
+
   const [status, setStatus] = useState("Ready. Open a photo to begin.");
   const [loading, setLoading] = useState(false);
 
@@ -39,7 +50,10 @@ export function useEditor() {
 
   const pushHistory = useCallback(
     (snap: Snapshot) => {
-      past.current.push(snap);
+      past.current.push({
+        params: { ...snap.params },
+        presetId: snap.presetId,
+      });
       if (past.current.length > MAX_HISTORY) past.current.shift();
       future.current = [];
       setHistoryTick((t) => t + 1);
@@ -52,7 +66,7 @@ export function useEditor() {
       if (prev && prev !== next) releasePhoto(prev);
       return next;
     });
-    setStatus(`${next.name} // ${next.width} x ${next.height}`);
+    setStatus(next.name + " // " + next.width + " x " + next.height);
   }, []);
 
   const openFile = useCallback(
@@ -62,7 +76,7 @@ export function useEditor() {
         return;
       }
       setLoading(true);
-      setStatus(`Opening ${file.name}...`);
+      setStatus("Opening " + file.name + "...");
       try {
         const loaded = await loadFromFile(file);
         commitPhoto(loaded);
@@ -96,29 +110,51 @@ export function useEditor() {
     setStatus("Ready. Open a photo to begin.");
   }, []);
 
-  const applyPreset = useCallback(
-    (id: string) => {
-      const preset = PRESET_MAP[id];
-      if (!preset) return;
-      pushHistory({ params, presetId });
-      setParams({ ...preset.params });
-      setPresetId(id);
-      setStatus(`Preset: ${preset.name} // ${preset.note}`);
-    },
-    [params, presetId, pushHistory],
-  );
-
-  const dragging = useRef(false);
-
-  const beginAdjust = useCallback(() => {
-    if (dragging.current) return;
-    dragging.current = true;
-    pushHistory({ params, presetId });
-  }, [params, presetId, pushHistory]);
-
-  const endAdjust = useCallback(() => {
-    dragging.current = false;
+  /**
+   * Selects a preset for live preview only. It does not touch history;
+   * Apply is the explicit commit point.
+   */
+  const applyPreset = useCallback((id: string) => {
+    const preset = PRESET_MAP[id];
+    if (!preset) return;
+    setParams({ ...preset.params });
+    setPresetId(id);
+    setStatus("[Loading] " + preset.name + " // " + preset.note);
   }, []);
+
+  /**
+   * Commits the current draft as one undoable operation.
+   *
+   * This deliberately commits the whole current state instead of each slider
+   * event, so a preset plus several manual adjustments can be undone together.
+   */
+  const applyChanges = useCallback(() => {
+    const dirty =
+      !paramsEqual(params, appliedParams) || presetId !== appliedPresetId;
+
+    if (!dirty) {
+      setStatus("No unapplied changes.");
+      return;
+    }
+
+    pushHistory({ params: appliedParams, presetId: appliedPresetId });
+    setAppliedParams({ ...params });
+    setAppliedPresetId(presetId);
+
+    const name = PRESET_MAP[presetId]?.name ?? "Custom";
+    setStatus("Applied: " + name);
+  }, [
+    appliedParams,
+    appliedPresetId,
+    params,
+    presetId,
+    pushHistory,
+  ]);
+
+  // Slider interaction changes only the draft. These callbacks remain here
+  // so the existing EffectsPanel interface does not need special cases.
+  const beginAdjust = useCallback(() => {}, []);
+  const endAdjust = useCallback(() => {}, []);
 
   const setParam = useCallback((id: ParamId, value: number) => {
     setParams((prev) => (prev[id] === value ? prev : { ...prev, [id]: value }));
@@ -126,31 +162,67 @@ export function useEditor() {
   }, []);
 
   const resetAll = useCallback(() => {
-    pushHistory({ params, presetId });
-    setParams({ ...DEFAULT_PARAMS });
+    const dirty =
+      !paramsEqual(params, DEFAULT_PARAMS) || presetId !== "none";
+
+    if (!dirty) {
+      setStatus("All effects are already reset.");
+      return;
+    }
+
+    pushHistory({ params: appliedParams, presetId: appliedPresetId });
+    const reset = { ...DEFAULT_PARAMS };
+    setParams(reset);
     setPresetId("none");
+    setAppliedParams({ ...reset });
+    setAppliedPresetId("none");
     setStatus("All effects reset.");
-  }, [params, presetId, pushHistory]);
+  }, [
+    appliedParams,
+    appliedPresetId,
+    params,
+    presetId,
+    pushHistory,
+  ]);
 
   const undo = useCallback(() => {
     const snap = past.current.pop();
     if (!snap) return;
-    future.current.push({ params, presetId });
-    setParams(snap.params);
+
+    future.current.push({
+      params: { ...appliedParams },
+      presetId: appliedPresetId,
+    });
+
+    const restored = { ...snap.params };
+    setParams(restored);
     setPresetId(snap.presetId);
+    setAppliedParams({ ...restored });
+    setAppliedPresetId(snap.presetId);
     setStatus("Undo.");
     setHistoryTick((t) => t + 1);
-  }, [params, presetId]);
+  }, [appliedParams, appliedPresetId]);
 
   const redo = useCallback(() => {
     const snap = future.current.pop();
     if (!snap) return;
-    past.current.push({ params, presetId });
-    setParams(snap.params);
+
+    past.current.push({
+      params: { ...appliedParams },
+      presetId: appliedPresetId,
+    });
+
+    const restored = { ...snap.params };
+    setParams(restored);
     setPresetId(snap.presetId);
+    setAppliedParams({ ...restored });
+    setAppliedPresetId(snap.presetId);
     setStatus("Redo.");
     setHistoryTick((t) => t + 1);
-  }, [params, presetId]);
+  }, [appliedParams, appliedPresetId]);
+
+  const hasUnappliedChanges =
+    !paramsEqual(params, appliedParams) || presetId !== appliedPresetId;
 
   return {
     photo,
@@ -161,11 +233,13 @@ export function useEditor() {
     canUndo: past.current.length > 0,
     canRedo: future.current.length > 0,
     historyTick,
+    hasUnappliedChanges,
     setStatus,
     openFile,
     openSample,
     closePhoto,
     applyPreset,
+    applyChanges,
     setParam,
     beginAdjust,
     endAdjust,
