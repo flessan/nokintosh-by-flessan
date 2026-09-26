@@ -116,23 +116,6 @@ export const PRESETS: Preset[] = [
     "collage",
   ),
   preset(
-    "blur-pixelate",
-    "Blur/Pixelate",
-    "Small-sensor softness with obvious digital blocking and reduced detail.",
-    {
-      grain: 0.32,
-      jpeg: 0.74,
-      colorShift: 0.38,
-      vignette: 0.12,
-      softness: 0.58,
-      sharpen: 0.1,
-      aberration: 0.16,
-      fade: 0.14,
-      contrast: 0.02,
-      saturation: -0.04,
-    },
-  ),
-  preset(
     "ccd",
     "CCD",
     "Classic CCD compact character: lively channels, crosstalk, crisp edges and a little bloom.",
