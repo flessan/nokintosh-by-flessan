@@ -25,3 +25,24 @@ export function CheckMark({ size = 10 }: { size?: number }) {
     </svg>
   );
 }
+
+
+export function MirrorIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25" aria-hidden="true">
+      <path d="M8 1v14" />
+      <path d="M2 4l4 4-4 4V4Z" fill="currentColor" stroke="none" />
+      <path d="M14 4l-4 4 4 4V4Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function FlipVerticalIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25" aria-hidden="true">
+      <path d="M1 8h14" />
+      <path d="M4 2l4 4 4-4H4Z" fill="currentColor" stroke="none" />
+      <path d="M4 14l4-4 4 4H4Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
