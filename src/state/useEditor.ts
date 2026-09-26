@@ -8,12 +8,13 @@ import {
   type LoadedPhoto,
 } from "../engine/image";
 import { paramsEqual, PRESET_MAP, PRESETS } from "../engine/presets";
-import { DEFAULT_PARAMS, type EffectParams, type ParamId } from "../engine/types";
+import { DEFAULT_PARAMS, type EffectParams, type FilterMode, type ParamId } from "../engine/types";
 import { IDENTITY_TRANSFORM, sameTransform, type ImageTransform } from "../engine/transform";
 
 interface Snapshot {
   params: EffectParams;
   presetId: string;
+  filter: FilterMode;
   transform: ImageTransform;
 }
 
@@ -28,12 +29,14 @@ export function useEditor() {
   // params/presetId are the live draft shown in the preview.
   const [params, setParams] = useState<EffectParams>({ ...INITIAL_PARAMS });
   const [presetId, setPresetId] = useState<string>(INITIAL_PRESET_ID);
+  const [filter, setFilter] = useState<FilterMode>("none");
   const [transform, setTransform] = useState<ImageTransform>({ ...IDENTITY_TRANSFORM });
 
   // applied* are the last explicitly committed settings. Apply turns this
   // draft into one undoable history step.
   const [appliedParams, setAppliedParams] = useState<EffectParams>({ ...INITIAL_PARAMS });
   const [appliedPresetId, setAppliedPresetId] = useState<string>(INITIAL_PRESET_ID);
+  const [appliedFilter, setAppliedFilter] = useState<FilterMode>("none");
   const [appliedTransform, setAppliedTransform] = useState<ImageTransform>({ ...IDENTITY_TRANSFORM });
 
   const [status, setStatus] = useState("Ready. Open a photo to begin.");
@@ -57,6 +60,7 @@ export function useEditor() {
       past.current.push({
         params: { ...snap.params },
         presetId: snap.presetId,
+        filter: snap.filter,
         transform: { ...snap.transform },
       });
       if (past.current.length > MAX_HISTORY) past.current.shift();
@@ -124,6 +128,7 @@ export function useEditor() {
     if (!preset) return;
     setParams({ ...preset.params });
     setPresetId(id);
+    setFilter(preset.filter ?? "none");
     setStatus("[Loading] " + preset.name + " // " + preset.note);
   }, []);
 
@@ -137,6 +142,7 @@ export function useEditor() {
     const dirty =
       !paramsEqual(params, appliedParams) ||
       presetId !== appliedPresetId ||
+      filter !== appliedFilter ||
       !sameTransform(transform, appliedTransform);
 
     if (!dirty) {
@@ -147,10 +153,12 @@ export function useEditor() {
     pushHistory({
       params: appliedParams,
       presetId: appliedPresetId,
+      filter: appliedFilter,
       transform: appliedTransform,
     });
     setAppliedParams({ ...params });
     setAppliedPresetId(presetId);
+    setAppliedFilter(filter);
     setAppliedTransform({ ...transform });
 
     const name = PRESET_MAP[presetId]?.name ?? "Custom";
@@ -187,6 +195,7 @@ export function useEditor() {
     const dirty =
       !paramsEqual(params, DEFAULT_PARAMS) ||
       presetId !== "none" ||
+      filter !== "none" ||
       !sameTransform(transform, IDENTITY_TRANSFORM);
 
     if (!dirty) {
@@ -197,14 +206,17 @@ export function useEditor() {
     pushHistory({
       params: appliedParams,
       presetId: appliedPresetId,
+      filter: appliedFilter,
       transform: appliedTransform,
     });
     const reset = { ...DEFAULT_PARAMS };
     setParams(reset);
     setPresetId("none");
+    setFilter("none");
     setTransform({ ...IDENTITY_TRANSFORM });
     setAppliedParams({ ...reset });
     setAppliedPresetId("none");
+    setAppliedFilter("none");
     setAppliedTransform({ ...IDENTITY_TRANSFORM });
     setStatus("All effects reset.");
   }, [
@@ -220,10 +232,12 @@ export function useEditor() {
     if (
       !paramsEqual(params, appliedParams) ||
       presetId !== appliedPresetId ||
+      filter !== appliedFilter ||
       !sameTransform(transform, appliedTransform)
     ) {
       setParams({ ...appliedParams });
       setPresetId(appliedPresetId);
+      setFilter(appliedFilter);
       setTransform({ ...appliedTransform });
       setStatus("Draft changes undone.");
       return;
@@ -235,14 +249,17 @@ export function useEditor() {
     future.current.push({
       params: { ...appliedParams },
       presetId: appliedPresetId,
+      filter: appliedFilter,
       transform: { ...appliedTransform },
     });
 
     const restored = { ...snap.params };
     setParams(restored);
     setPresetId(snap.presetId);
+    setFilter(snap.filter);
     setAppliedParams({ ...restored });
     setAppliedPresetId(snap.presetId);
+    setAppliedFilter(snap.filter);
     setTransform({ ...snap.transform });
     setAppliedTransform({ ...snap.transform });
     setStatus("Undo.");
@@ -254,6 +271,7 @@ export function useEditor() {
     if (
       !paramsEqual(params, appliedParams) ||
       presetId !== appliedPresetId ||
+      filter !== appliedFilter ||
       !sameTransform(transform, appliedTransform)
     ) {
       setStatus("Apply the current draft before using Redo.");
@@ -266,14 +284,17 @@ export function useEditor() {
     past.current.push({
       params: { ...appliedParams },
       presetId: appliedPresetId,
+      filter: appliedFilter,
       transform: { ...appliedTransform },
     });
 
     const restored = { ...snap.params };
     setParams(restored);
     setPresetId(snap.presetId);
+    setFilter(snap.filter);
     setAppliedParams({ ...restored });
     setAppliedPresetId(snap.presetId);
+    setAppliedFilter(snap.filter);
     setStatus("Redo.");
     setHistoryTick((t) => t + 1);
   }, [appliedParams, appliedPresetId, params, presetId]);
@@ -281,12 +302,14 @@ export function useEditor() {
   const hasUnappliedChanges =
     !paramsEqual(params, appliedParams) ||
     presetId !== appliedPresetId ||
+    filter !== appliedFilter ||
     !sameTransform(transform, appliedTransform);
 
   return {
     photo,
     params,
     presetId,
+    filter,
     transform,
     status,
     loading,
