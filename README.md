@@ -18,7 +18,7 @@ Open → Add photo → Pick a look → Adjust a few controls → Export AVIF
 - Data-driven preset library (13 looks)
 - 14 controls grouped as Core / Optics / Tone
 - File picker, drag & drop and clipboard paste input
-- Hold-to-compare against the original, plus undo / redo and reset
+- Hold-to-compare against the original, explicit Apply workflow, plus undo / redo and reset
 - AVIF export (first-class), with WebP and PNG as secondary formats
 - Installable PWA, works offline after first load
 
@@ -32,6 +32,10 @@ npm run preview  # serve the production build
 ```
 
 Requires Node 18+.
+
+## Editing workflow
+
+Preset selection and slider changes are live draft edits. Press **Apply** (or `Ctrl+Enter`) to commit the current combination as one undoable history step. This lets a preset and several manual adjustments travel together through undo/redo. Previously rendered preset combinations are kept in a small per-photo LRU cache for fast revisits.
 
 ## Architecture
 
@@ -63,8 +67,7 @@ source
   → canvas
 ```
 
-The preview renders at most 1600 px on the long edge; export re-renders the
-photo at full resolution in a throwaway context and encodes it there.
+The preview renders at most 1200 px on the long edge; preset preview frames are cached per photo, while export re-renders the photo at the requested full output size in a throwaway context and encodes it there.
 
 ## Documentation
 
