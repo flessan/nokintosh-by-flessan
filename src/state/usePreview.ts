@@ -171,7 +171,6 @@ export function usePreview(photo: LoadedPhoto | null, params: EffectParams, show
 
   function schedule() {
     renderSerialRef.current += 1;
-    const serial = renderSerialRef.current;
 
     if (renderFrameRef.current !== null) {
       cancelAnimationFrame(renderFrameRef.current);
@@ -182,6 +181,10 @@ export function usePreview(photo: LoadedPhoto | null, params: EffectParams, show
     prepareFrameRef.current = requestAnimationFrame(() => {
       if (!prepare()) return;
       if (originalRef.current) return;
+
+      // Read the newest serial after the preparation step. Multiple React
+      // effects can coalesce into this same frame.
+      const serial = renderSerialRef.current;
       renderFrameRef.current = requestAnimationFrame(() => renderFiltered(serial));
     });
   }
