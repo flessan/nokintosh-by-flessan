@@ -39,9 +39,9 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement | null>(null);
   const dragDepth = useRef(0);
 
-  const { photo, params, presetId } = editor;
+  const { photo, params, presetId, filter, transform } = editor;
   const cacheCustom = !editor.hasUnappliedChanges;
-  const { canvasRef, stageRef, info } = usePreview(photo, params, presetId, showOriginal, cacheCustom);
+  const { canvasRef, stageRef, info } = usePreview(photo, params, presetId, filter, showOriginal, cacheCustom);
 
   // ---------- file input ----------
   const pickFile = useCallback(() => fileInput.current?.click(), []);
@@ -115,6 +115,8 @@ export default function App() {
           photo.width,
           photo.height,
           params,
+          filter,
+          transform,
           options,
         );
         const presetName = PRESET_MAP[presetId]?.name ?? "custom";
@@ -400,10 +402,14 @@ export default function App() {
               presetName={PRESET_MAP[presetId]?.name ?? "Custom"}
               zoom={zoom}
               pan={pan}
+              mirror={transform.mirror}
+              flipVertical={transform.flipVertical}
               onZoomChange={changeZoom}
               onToggleZoom={toggleZoom}
               onPanChange={changePan}
               onZoomWheel={zoomByWheel}
+              onToggleMirror={editor.toggleMirror}
+              onToggleFlipVertical={editor.toggleFlipVertical}
               onOpen={pickFile}
               onSample={() => void editor.openSample()}
             />
