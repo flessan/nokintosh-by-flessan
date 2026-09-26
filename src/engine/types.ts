@@ -40,6 +40,15 @@ export interface EffectParams {
 
 export type ParamId = keyof EffectParams;
 
+export type FilterMode =
+  | "none"
+  | "bw"
+  | "sepia"
+  | "negative"
+  | "warm"
+  | "cool"
+  | "high-contrast";
+
 export interface ControlDef {
   id: ParamId;
   label: string;
@@ -59,6 +68,7 @@ export interface Preset {
   /** One-line description shown under the preset list. */
   note: string;
   params: EffectParams;
+  filter?: FilterMode;
 }
 
 export const DEFAULT_PARAMS: EffectParams = {
