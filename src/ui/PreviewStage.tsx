@@ -154,57 +154,60 @@ export function PreviewStage({
         />
 
         {photo && (
-          <div
-            className="pointer-events-none group-hover:pointer-events-auto absolute bottom-2 left-2 z-10 flex items-center gap-2 bevel-raised bg-[color:var(--face)] px-2 py-1 opacity-0 shadow-[2px_2px_0_0_rgba(0,0,0,0.3)] transition-opacity group-hover:opacity-100"
-            aria-label="Preview zoom controls"
-          >
-            <span className="shrink-0 text-[11px] font-bold">{zoomLabel}</span>
-            <input
-              type="range"
-              min="1"
-              max="4"
-              step="0.25"
-              value={zoom}
-              onChange={(e) => onZoomChange(Number(e.target.value))}
-              onClick={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="ui-range w-[120px]"
-              aria-label="Zoom"
-            />
-            <Button
-              className="min-w-[42px] px-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onZoomChange(1);
-              }}
+          <>
+            <div
+              className="pointer-events-none group-hover:pointer-events-auto absolute bottom-2 left-2 z-10 flex items-center gap-2 bevel-raised bg-[color:var(--face)] px-2 py-1 opacity-0 shadow-[2px_2px_0_0_rgba(0,0,0,0.3)] transition-opacity group-hover:opacity-100"
+              aria-label="Preview zoom controls"
             >
-              Fit
-            </Button>
-          </div>
+              <span className="shrink-0 text-[11px] font-bold">{zoomLabel}</span>
+              <input
+                type="range"
+                min="1"
+                max="4"
+                step="0.25"
+                value={zoom}
+                onChange={(e) => onZoomChange(Number(e.target.value))}
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="ui-range w-[120px]"
+                aria-label="Zoom"
+              />
+              <Button
+                className="min-w-[42px] px-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onZoomChange(1);
+                }}
+              >
+                Fit
+              </Button>
+            </div>
 
-          <div className="pointer-events-none absolute bottom-2 right-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
-            <Button
-              className="px-2"
-              aria-pressed={mirror}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleMirror();
-              }}
-            >
-              Mirror H
-            </Button>
-            <Button
-              className="px-2"
-              aria-pressed={flipVertical}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleFlipVertical();
-              }}
-            >
-              Flip V
-            </Button>
-          </div>
-          </div>
+            <div className="pointer-events-none absolute bottom-2 right-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+              <Button
+                className="px-2"
+                aria-pressed={mirror}
+                title="Mirror / flip horizontally"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleMirror();
+                }}
+              >
+                Mirror H
+              </Button>
+              <Button
+                className="px-2"
+                aria-pressed={flipVertical}
+                title="Flip vertically"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleFlipVertical();
+                }}
+              >
+                Flip V
+              </Button>
+            </div>
+          </>
         )}
 
         {photo && rendering && (
