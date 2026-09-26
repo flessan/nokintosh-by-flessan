@@ -25,6 +25,7 @@ export default function App() {
   const editor = useEditor();
   const [showOriginal, setShowOriginal] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragOver, setDragOver] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const [tab, setTab] = useState<"presets" | "effects">("presets");
@@ -39,7 +40,8 @@ export default function App() {
   const dragDepth = useRef(0);
 
   const { photo, params, presetId } = editor;
-  const { canvasRef, stageRef, info } = usePreview(photo, params, presetId, showOriginal, !editor.hasUnappliedChanges);
+  const cacheCustom = !editor.hasUnappliedChanges;
+  const { canvasRef, stageRef, info } = usePreview(photo, params, presetId, showOriginal, cacheCustom);
 
   // ---------- file input ----------
   const pickFile = useCallback(() => fileInput.current?.click(), []);
@@ -139,6 +141,11 @@ export default function App() {
   const changeZoom = useCallback((value: number) => {
     const next = Math.min(4, Math.max(1, Math.round(value * 4) / 4));
     setZoom(next);
+    if (next === 1) setPan({ x: 0, y: 0 });
+  }, []);
+
+  const changePan = useCallback((value: { x: number; y: number }) => {
+    setPan(value);
   }, []);
 
   const toggleZoom = useCallback(() => {
@@ -153,7 +160,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!photo) setZoom(1);
+    if (!photo) {
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
+    }
   }, [photo]);
 
   // ---------- keyboard ----------
@@ -386,9 +396,13 @@ export default function App() {
               dragOver={dragOver}
               showOriginal={showOriginal}
               loading={editor.loading}
+              rendering={info.phase === "loading"}
+              presetName={PRESET_MAP[presetId]?.name ?? "Custom"}
               zoom={zoom}
+              pan={pan}
               onZoomChange={changeZoom}
               onToggleZoom={toggleZoom}
+              onPanChange={changePan}
               onZoomWheel={zoomByWheel}
               onOpen={pickFile}
               onSample={() => void editor.openSample()}
