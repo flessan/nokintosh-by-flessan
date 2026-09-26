@@ -21,7 +21,7 @@ export function PresetList({
           <li key={p.id} role="option" aria-selected={selected}>
             <button
               type="button"
-              className="ui-item text-[12px]"
+              className="ui-item text-[12px] hover:bg-[color:var(--sel)] hover:text-white focus-visible:bg-[color:var(--sel)] focus-visible:text-white"
               aria-pressed={selected}
               onClick={() => onPick(p.id)}
               onMouseEnter={() => onHint?.(p.note)}
