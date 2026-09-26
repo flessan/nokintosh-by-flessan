@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { LoadedPhoto } from "../engine/image";
+import { applyFrame } from "../engine/frame";
+import { applyCanvasTransform, IDENTITY_TRANSFORM, sameTransform, type ImageTransform } from "../engine/transform";
 import { createRenderer, type Renderer } from "../engine/renderer";
-import type { EffectParams, FilterMode } from "../engine/types";
+import type { EffectParams, FilterMode, FrameMode } from "../engine/types";
 
 /** Longest edge of the live preview buffer. Export always uses full size. */
 const PREVIEW_MAX = 1200;
@@ -57,6 +59,8 @@ export function usePreview(
   params: EffectParams,
   presetId: string,
   filter: FilterMode,
+  frame: FrameMode,
+  transform: ImageTransform,
   showOriginal: boolean,
   cacheCustom: boolean,
 ) {
@@ -70,6 +74,8 @@ export function usePreview(
   const originalRef = useRef(showOriginal);
   const presetRef = useRef(presetId);
   const filterRef = useRef(filter);
+  const frameRef = useRef(frame);
+  const transformRef = useRef(transform);
 
   // WeakMap prevents cached pixels from keeping old photo objects alive after
   // a new photo is opened or the current photo is closed.
@@ -88,6 +94,8 @@ export function usePreview(
   originalRef.current = showOriginal;
   presetRef.current = presetId;
   filterRef.current = filter;
+  frameRef.current = frame;
+  transformRef.current = transform;
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -162,6 +170,9 @@ export function usePreview(
       bw,
       bh,
       filterRef.current,
+      frameRef.current,
+      transformRef.current.mirror ? "mh" : "m0",
+      transformRef.current.flipVertical ? "fv" : "f0",
       paramsKey(paramsRef.current),
     ].join("|");
   }
@@ -265,6 +276,8 @@ export function usePreview(
     const t0 = performance.now();
     try {
       r.render(paramsRef.current, filterRef.current);
+      applyCanvasTransform(canvas, transformRef.current);
+      applyFrame(canvas, frameRef.current);
 
       if (key) {
         const ctx = canvas.getContext("2d");
@@ -311,7 +324,19 @@ export function usePreview(
   useEffect(() => {
     schedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, presetId, filter, box.w, box.h, showOriginal, photo, cacheCustom]);
+  }, [
+    params,
+    presetId,
+    filter,
+    frame,
+    transform.mirror,
+    transform.flipVertical,
+    box.w,
+    box.h,
+    showOriginal,
+    photo,
+    cacheCustom,
+  ]);
 
   useEffect(() => {
     return () => {
