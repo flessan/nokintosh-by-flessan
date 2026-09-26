@@ -38,7 +38,7 @@ export default function App() {
   const dragDepth = useRef(0);
 
   const { photo, params, presetId } = editor;
-  const { canvasRef, stageRef, info } = usePreview(photo, params, showOriginal);
+  const { canvasRef, stageRef, info } = usePreview(photo, params, presetId, showOriginal);
 
   // ---------- file input ----------
   const pickFile = useCallback(() => fileInput.current?.click(), []);
@@ -148,6 +148,9 @@ export default function App() {
       } else if (mod && e.key.toLowerCase() === "e") {
         e.preventDefault();
         quickExport();
+      } else if (mod && e.key === "Enter") {
+        e.preventDefault();
+        editor.applyChanges();
       } else if (mod && e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
         editor.undo();
@@ -202,6 +205,13 @@ export default function App() {
             disabled: !editor.canRedo,
             separatorAfter: true,
           },
+          {
+            label: "Apply Changes",
+            shortcut: "Ctrl+Enter",
+            action: editor.applyChanges,
+            disabled: !editor.hasUnappliedChanges,
+            separatorAfter: true,
+          },
           { label: "Reset All Effects", shortcut: "Ctrl+0", action: editor.resetAll },
         ],
       },
@@ -234,6 +244,12 @@ export default function App() {
   const detail = photo
     ? `${photo.width}x${photo.height}`
     : "no image";
+  const previewStatus =
+    info.phase === "loading"
+      ? "[Loading] " + (PRESET_MAP[presetId]?.name ?? "Preview")
+      : info.phase === "cached"
+        ? "[Cached] " + (PRESET_MAP[presetId]?.name ?? "Preview")
+        : hint ?? editor.status;
   const engineLabel =
     info.engine === "webgl2"
       ? `GPU  ${info.previewWidth}x${info.previewHeight}  ${info.lastRenderMs.toFixed(1)}ms`
@@ -253,6 +269,8 @@ export default function App() {
           onCommitStart={editor.beginAdjust}
           onCommitEnd={editor.endAdjust}
           onHint={setHint}
+          onApply={editor.applyChanges}
+          canApply={editor.hasUnappliedChanges}
         />
         <div className="mt-2 flex gap-2 px-[5px] pb-1">
           <Button className="flex-1" onClick={editor.resetAll}>
@@ -329,7 +347,7 @@ export default function App() {
             Hold: Original
           </Button>
           <span className="ml-auto hidden px-2 text-[11px] text-[color:var(--ink-dim)] lg:block">
-            {PRESET_MAP[presetId]?.name ?? "Custom settings"}
+            {PRESET_MAP[presetId]?.name ?? "Custom settings"}{editor.hasUnappliedChanges ? " *" : ""}
           </span>
         </div>
 
@@ -411,7 +429,7 @@ export default function App() {
         {/* ---- status bar ---- */}
         <div className="shrink-0">
           <StatusBar
-            message={hint ?? editor.status}
+            message={previewStatus}
             detail={detail}
             engine={engineLabel}
             canExport={!!photo}
