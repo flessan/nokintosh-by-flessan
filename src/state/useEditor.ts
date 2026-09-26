@@ -9,10 +9,12 @@ import {
 } from "../engine/image";
 import { paramsEqual, PRESET_MAP, PRESETS } from "../engine/presets";
 import { DEFAULT_PARAMS, type EffectParams, type ParamId } from "../engine/types";
+import { IDENTITY_TRANSFORM, sameTransform, type ImageTransform } from "../engine/transform";
 
 interface Snapshot {
   params: EffectParams;
   presetId: string;
+  transform: ImageTransform;
 }
 
 const MAX_HISTORY = 40;
@@ -26,11 +28,13 @@ export function useEditor() {
   // params/presetId are the live draft shown in the preview.
   const [params, setParams] = useState<EffectParams>({ ...INITIAL_PARAMS });
   const [presetId, setPresetId] = useState<string>(INITIAL_PRESET_ID);
+  const [transform, setTransform] = useState<ImageTransform>({ ...IDENTITY_TRANSFORM });
 
   // applied* are the last explicitly committed settings. Apply turns this
   // draft into one undoable history step.
   const [appliedParams, setAppliedParams] = useState<EffectParams>({ ...INITIAL_PARAMS });
   const [appliedPresetId, setAppliedPresetId] = useState<string>(INITIAL_PRESET_ID);
+  const [appliedTransform, setAppliedTransform] = useState<ImageTransform>({ ...IDENTITY_TRANSFORM });
 
   const [status, setStatus] = useState("Ready. Open a photo to begin.");
   const [loading, setLoading] = useState(false);
@@ -53,6 +57,7 @@ export function useEditor() {
       past.current.push({
         params: { ...snap.params },
         presetId: snap.presetId,
+        transform: { ...snap.transform },
       });
       if (past.current.length > MAX_HISTORY) past.current.shift();
       future.current = [];
@@ -130,16 +135,23 @@ export function useEditor() {
    */
   const applyChanges = useCallback(() => {
     const dirty =
-      !paramsEqual(params, appliedParams) || presetId !== appliedPresetId;
+      !paramsEqual(params, appliedParams) ||
+      presetId !== appliedPresetId ||
+      !sameTransform(transform, appliedTransform);
 
     if (!dirty) {
       setStatus("No unapplied changes.");
       return;
     }
 
-    pushHistory({ params: appliedParams, presetId: appliedPresetId });
+    pushHistory({
+      params: appliedParams,
+      presetId: appliedPresetId,
+      transform: appliedTransform,
+    });
     setAppliedParams({ ...params });
     setAppliedPresetId(presetId);
+    setAppliedTransform({ ...transform });
 
     const name = PRESET_MAP[presetId]?.name ?? "Custom";
     setStatus("Applied: " + name);
@@ -161,21 +173,39 @@ export function useEditor() {
     setPresetId((prev) => (prev === "custom" ? prev : "custom"));
   }, []);
 
+  const toggleMirror = useCallback(() => {
+    setTransform((prev) => ({ ...prev, mirror: !prev.mirror }));
+    setPresetId("custom");
+  }, []);
+
+  const toggleFlipVertical = useCallback(() => {
+    setTransform((prev) => ({ ...prev, flipVertical: !prev.flipVertical }));
+    setPresetId("custom");
+  }, []);
+
   const resetAll = useCallback(() => {
     const dirty =
-      !paramsEqual(params, DEFAULT_PARAMS) || presetId !== "none";
+      !paramsEqual(params, DEFAULT_PARAMS) ||
+      presetId !== "none" ||
+      !sameTransform(transform, IDENTITY_TRANSFORM);
 
     if (!dirty) {
       setStatus("All effects are already reset.");
       return;
     }
 
-    pushHistory({ params: appliedParams, presetId: appliedPresetId });
+    pushHistory({
+      params: appliedParams,
+      presetId: appliedPresetId,
+      transform: appliedTransform,
+    });
     const reset = { ...DEFAULT_PARAMS };
     setParams(reset);
     setPresetId("none");
+    setTransform({ ...IDENTITY_TRANSFORM });
     setAppliedParams({ ...reset });
     setAppliedPresetId("none");
+    setAppliedTransform({ ...IDENTITY_TRANSFORM });
     setStatus("All effects reset.");
   }, [
     appliedParams,
@@ -187,9 +217,14 @@ export function useEditor() {
 
   const undo = useCallback(() => {
     // First undo cancels an uncommitted draft without consuming history.
-    if (!paramsEqual(params, appliedParams) || presetId !== appliedPresetId) {
+    if (
+      !paramsEqual(params, appliedParams) ||
+      presetId !== appliedPresetId ||
+      !sameTransform(transform, appliedTransform)
+    ) {
       setParams({ ...appliedParams });
       setPresetId(appliedPresetId);
+      setTransform({ ...appliedTransform });
       setStatus("Draft changes undone.");
       return;
     }
@@ -200,6 +235,7 @@ export function useEditor() {
     future.current.push({
       params: { ...appliedParams },
       presetId: appliedPresetId,
+      transform: { ...appliedTransform },
     });
 
     const restored = { ...snap.params };
@@ -207,13 +243,19 @@ export function useEditor() {
     setPresetId(snap.presetId);
     setAppliedParams({ ...restored });
     setAppliedPresetId(snap.presetId);
+    setTransform({ ...snap.transform });
+    setAppliedTransform({ ...snap.transform });
     setStatus("Undo.");
     setHistoryTick((t) => t + 1);
   }, [appliedParams, appliedPresetId, params, presetId]);
 
   const redo = useCallback(() => {
     // If the user is sitting on a draft, redo first has no committed meaning.
-    if (!paramsEqual(params, appliedParams) || presetId !== appliedPresetId) {
+    if (
+      !paramsEqual(params, appliedParams) ||
+      presetId !== appliedPresetId ||
+      !sameTransform(transform, appliedTransform)
+    ) {
       setStatus("Apply the current draft before using Redo.");
       return;
     }
@@ -224,6 +266,7 @@ export function useEditor() {
     past.current.push({
       params: { ...appliedParams },
       presetId: appliedPresetId,
+      transform: { ...appliedTransform },
     });
 
     const restored = { ...snap.params };
@@ -236,12 +279,15 @@ export function useEditor() {
   }, [appliedParams, appliedPresetId, params, presetId]);
 
   const hasUnappliedChanges =
-    !paramsEqual(params, appliedParams) || presetId !== appliedPresetId;
+    !paramsEqual(params, appliedParams) ||
+    presetId !== appliedPresetId ||
+    !sameTransform(transform, appliedTransform);
 
   return {
     photo,
     params,
     presetId,
+    transform,
     status,
     loading,
     canUndo: past.current.length > 0,
@@ -254,6 +300,8 @@ export function useEditor() {
     closePhoto,
     applyPreset,
     applyChanges,
+    toggleMirror,
+    toggleFlipVertical,
     setParam,
     beginAdjust,
     endAdjust,
