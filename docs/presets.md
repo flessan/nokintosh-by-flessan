@@ -59,3 +59,13 @@ Preset previews are cached per photo and output size after their first render. T
 The UI separates generic image filters from camera-character profiles. The **Filters** submenu contains B&W, Sepia, Negative, Warm, Cool and High Contrast. **Camera 2** contains the small-sensor/early-phone profiles Nokia, 1/4" and iPhone3gs. Other compact-camera profiles remain directly visible.
 
 Preset transforms are separate from the filter look and are committed through the same Apply/Undo workflow.
+
+
+## Blur / Pixelate tool
+
+Blur / Pixelate is intentionally separate from the camera-look preset list.
+
+- **Gaussian Blur** uses a browser Gaussian blur pass.
+- **Pixelate** uses hard nearest-neighbour blocks.
+- Both support **Uniform** (whole image), **Vignette** (stronger toward the edges), and **Draw** (painted mask) modes.
+- Draw mode stores normalized brush strokes in editor history, so the mask follows the document through Apply/Undo/Redo and export.
