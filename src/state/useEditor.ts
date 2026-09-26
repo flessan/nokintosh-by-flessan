@@ -178,8 +178,10 @@ export function useEditor() {
     appliedParams,
     appliedPresetId,
     appliedFilter,
+    appliedFrame,
     appliedTransform,
     filter,
+    frame,
     params,
     presetId,
     pushHistory,
@@ -242,8 +244,10 @@ export function useEditor() {
     appliedParams,
     appliedPresetId,
     appliedFilter,
+    appliedFrame,
     appliedTransform,
     filter,
+    frame,
     params,
     presetId,
     pushHistory,
@@ -331,7 +335,7 @@ export function useEditor() {
     setAppliedTransform({ ...snap.transform });
     setStatus("Redo.");
     setHistoryTick((t) => t + 1);
-  }, [appliedParams, appliedPresetId, appliedFilter, appliedFrame, params, presetId, filter, frame, transform]);
+  }, [appliedParams, appliedPresetId, appliedFilter, appliedFrame, appliedTransform, params, presetId, filter, frame, transform]);
 
   const hasUnappliedChanges =
     !paramsEqual(params, appliedParams) ||
