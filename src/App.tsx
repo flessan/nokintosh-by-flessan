@@ -163,10 +163,6 @@ export default function App() {
     setPan(value);
   }, []);
 
-  const toggleZoom = useCallback(() => {
-    setZoom((current) => (current === 1 ? 2 : 1));
-  }, []);
-
   const zoomByWheel = useCallback((delta: number) => {
     setZoom((current) => {
       const direction = delta > 0 ? -0.25 : 0.25;
@@ -484,7 +480,6 @@ export default function App() {
               flipVertical={transform.flipVertical}
               specialEffect={specialEffect}
               onZoomChange={changeZoom}
-              onToggleZoom={toggleZoom}
               onPanChange={changePan}
               onZoomWheel={zoomByWheel}
               onToggleMirror={editor.toggleMirror}
