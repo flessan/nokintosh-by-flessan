@@ -1,79 +1,71 @@
-# Adding an effect
+# Effects implementation notes
 
-An effect is three small edits: a parameter, a shader change, and a uniform.
+Nokintosh has two kinds of image effects.
 
-## 1. Declare the parameter
+## Camera controls
 
-In `src/engine/types.ts`:
+The 14 camera-look controls are declared in `src/engine/types.ts` through
+`EffectParams` and `CONTROLS`. The active renderer is
+`src/engine/canvasRenderer.ts`.
 
-```ts
-export interface EffectParams {
-  // ...
-  banding: number;
-}
+The camera pipeline intentionally models compact-digital characteristics such
+as:
 
-export const DEFAULT_PARAMS: EffectParams = {
-  // ...
-  banding: 0,
-};
+- sensor grain and chroma noise
+- low-quality JPEG blocking/chroma damage
+- CCD-style channel crosstalk
+- lens softness
+- in-camera sharpening
+- bloom
+- chromatic aberration
+- direct flash falloff
+- exposure / temperature / tone
+- optical vignette and lifted blacks
 
-export const CONTROLS: ControlDef[] = [
-  // ...
-  {
-    id: "banding",
-    label: "Banding",
-    hint: "Posterised gradients of an 8 bit sensor readout.",
-    min: 0,
-    max: 1,
-    step: 0.01,
-    group: "core", // core | optics | tone
-  },
-];
+An experimental WebGL2 implementation remains in `src/engine/glRenderer.ts`,
+but `createRenderer()` currently selects Canvas2D.
+
+## Blur / Pixelate
+
+`src/engine/specialEffect.ts` contains the separate Blur / Pixelate tool.
+
+It supports:
+
+- `gaussian-blur`
+- `pixelate`
+
+Both can be applied as:
+
+- `uniform` — the whole image
+- `vignette` — strongest toward the outer edges
+- `draw` — only inside user-painted strokes
+
+Draw mode stores normalized points in editor state. This keeps the mask
+independent of preview resolution and allows the same document state to be
+re-rendered for export.
+
+The draw mask is deliberately not part of `EffectParams`: it is a tool state,
+not a camera-look characteristic.
+
+## Rendering order
+
+The current active path is:
+
+```
+source
+  -> camera-look Canvas2D pipeline
+  -> named filter
+  -> mirror / flip
+  -> Gaussian Blur or Pixelate
+  -> Collage frame
+  -> output canvas
 ```
 
-The Effects panel is generated from `CONTROLS`, so the slider appears
-automatically, including its label, value read-out and status-bar hint.
+The preview uses a capped working size. Export reruns the pipeline at the
+selected output size.
 
-## 2. Implement it in the shader
+## Design rule
 
-Effects live in one of the two main fragment shaders in
-`src/engine/shaders.ts`:
-
-- `FRAG_MAIN` (pass A) // optics, colour character, bloom, sensor noise.
-- `FRAG_POST` (pass B) // anything that needs the already-processed image, such
-  as the JPEG simulation, vignette and output dither.
-
-Add a uniform and the code in the correct stage:
-
-```glsl
-uniform float u_banding;
-// ...
-if (u_banding > 0.001) {
-  float steps = mix(255.0, 18.0, u_banding);
-  c = floor(c * steps + 0.5) / steps;
-}
-```
-
-Keep effects resolution independent: multiply pixel-space distances by
-`u_scale` (render width / 1280) so the preview and the full-size export match.
-
-## 3. Upload the uniform
-
-In `src/engine/glRenderer.ts`, inside `render()`:
-
-```ts
-gl.uniform1f(this.loc(pm, "u_banding"), p.banding);
-```
-
-## 4. Optional: mirror it in the CPU fallback
-
-`src/engine/canvasRenderer.ts` runs when WebGL2 is unavailable. It processes
-the same stages in the same order with a plain pixel loop. A missing effect
-there degrades gracefully, but matching behaviour is preferred.
-
-## Design rules
-
-- Every control must contribute to the *old digital camera* look.
-- Do not add generic photo-editor operations (crop, curves, text, filters).
-- Neutral must mean "no change": a parameter of `0` (or `0` for bipolar
-  controls) has to leave the pixels untouched.
+Effects should remain purpose-driven. Nokintosh is a digicam utility, not a
+general Photoshop-style editor, so new operations should earn their place by
+contributing directly to the intended workflow.
