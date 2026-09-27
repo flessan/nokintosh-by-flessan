@@ -121,6 +121,65 @@ function buildDrawMask(width: number, height: number, strokes: DrawStroke[], bru
   return ctx.getImageData(0, 0, width, height).data;
 }
 
+function createGaussianBlurred(
+  source: HTMLCanvasElement,
+  amount: number,
+  width: number,
+  height: number,
+): HTMLCanvasElement {
+  const result = document.createElement("canvas");
+  result.width = width;
+  result.height = height;
+
+  const ctx = result.getContext("2d");
+  if (!ctx) return result;
+
+  // Padding prevents Canvas2D's blur from being clipped at the image edges.
+  // Without this, the filtered canvas can produce dark/transparent edge pixels
+  // which become visible when the blurred image is blended back over the source.
+  const scale = Math.max(0.5, Math.min(width, height) / 1280);
+  const radius = Math.max(1.25, (2 + amount * 30) * scale);
+  const padding = Math.max(2, Math.ceil(radius * 3));
+
+  const padded = document.createElement("canvas");
+  padded.width = width + padding * 2;
+  padded.height = height + padding * 2;
+
+  const paddedCtx = padded.getContext("2d");
+  if (!paddedCtx) return result;
+
+  paddedCtx.imageSmoothingEnabled = true;
+  paddedCtx.imageSmoothingQuality = "high";
+  paddedCtx.drawImage(source, padding, padding);
+
+  const blurred = document.createElement("canvas");
+  blurred.width = padded.width;
+  blurred.height = padded.height;
+  const blurredCtx = blurred.getContext("2d");
+  if (!blurredCtx) return result;
+
+  blurredCtx.imageSmoothingEnabled = true;
+  blurredCtx.imageSmoothingQuality = "high";
+  blurredCtx.filter = `blur(${radius.toFixed(2)}px)`;
+  blurredCtx.drawImage(padded, 0, 0);
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(
+    blurred,
+    padding,
+    padding,
+    width,
+    height,
+    0,
+    0,
+    width,
+    height,
+  );
+
+  return result;
+}
+
 function createPixelated(
   source: HTMLCanvasElement,
   amount: number,
@@ -155,6 +214,9 @@ function createPixelated(
  *
  * Uniform affects the complete image, Vignette concentrates the effect near
  * the outer edges, and Draw limits it to the brush strokes recorded in state.
+ *
+ * Gaussian blur is rendered on a padded surface so the blur kernel has enough
+ * room around the photo and does not create clipped/transparent edge artifacts.
  */
 export function applySpecialEffect(canvas: HTMLCanvasElement, effect: SpecialEffectState) {
   if (effect.kind === "none" || effect.amount <= 0.001) return;
@@ -172,21 +234,10 @@ export function applySpecialEffect(canvas: HTMLCanvasElement, effect: SpecialEff
   baseCtx.imageSmoothingQuality = "high";
   baseCtx.drawImage(canvas, 0, 0);
 
-  let effected: HTMLCanvasElement;
-  if (effect.kind === "gaussian-blur") {
-    effected = document.createElement("canvas");
-    effected.width = width;
-    effected.height = height;
-    const ctx = effected.getContext("2d");
-    if (!ctx) return;
-
-    const radius = Math.max(1, (1.5 + effect.amount * 26) * Math.max(0.5, width / 1280));
-    ctx.filter = `blur(${radius.toFixed(2)}px)`;
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(base, 0, 0);
-  } else {
-    effected = createPixelated(base, effect.amount, width, height);
-  }
+  const effected =
+    effect.kind === "gaussian-blur"
+      ? createGaussianBlurred(base, effect.amount, width, height)
+      : createPixelated(base, effect.amount, width, height);
 
   const baseData = baseCtx.getImageData(0, 0, width, height);
   const effectCtx = effected.getContext("2d", { willReadFrequently: true });
