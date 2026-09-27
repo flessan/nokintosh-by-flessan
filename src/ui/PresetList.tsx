@@ -51,8 +51,9 @@ export function PresetList({
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<
-    "filters" | "camera2" | "special" | "gaussian" | "pixelate" | null
+    "filters" | "camera2" | "special" | null
   >(null);
+  const [openSpecialKind, setOpenSpecialKind] = useState<"gaussian-blur" | "pixelate" | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -61,12 +62,14 @@ export function PresetList({
     const onPointerDown = (event: PointerEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setOpenMenu(null);
+        setOpenSpecialKind(null);
         onHint?.(null);
       }
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setOpenMenu(null);
+        setOpenSpecialKind(null);
         onHint?.(null);
       }
     };
@@ -93,6 +96,7 @@ export function PresetList({
         aria-pressed={selected}
         onClick={() => {
           setOpenMenu(null);
+          setOpenSpecialKind(null);
           onPick(p.id);
         }}
         onMouseEnter={() => {
@@ -133,7 +137,10 @@ export function PresetList({
         }
         aria-haspopup="menu"
         aria-expanded={openMenu === menu}
-        onClick={() => setOpenMenu((current) => (current === menu ? null : menu))}
+        onClick={() => {
+          setOpenSpecialKind(null);
+          setOpenMenu((current) => (current === menu ? null : menu));
+        }}
         onMouseEnter={() => {
           setHovered(null);
           onHint?.(
@@ -170,25 +177,28 @@ export function PresetList({
 
   const renderSpecialMenu = () => {
     const selected = specialEffect.kind !== "none";
+    const specialOpen = openMenu === "special";
+
     return (
       <div className="relative">
         <button
           type="button"
           className="ui-item text-[12px]"
           style={
-            selected || openMenu === "special" || openMenu === "gaussian" || openMenu === "pixelate"
+            selected || specialOpen || openSpecialKind !== null
               ? { backgroundColor: "var(--sel)", color: "#ffffff" }
               : undefined
           }
           aria-haspopup="menu"
-          aria-expanded={openMenu === "special" || openMenu === "gaussian" || openMenu === "pixelate"}
-          onClick={() =>
-            setOpenMenu((current) =>
-              current === "special" || current === "gaussian" || current === "pixelate"
-                ? null
-                : "special",
-            )
-          }
+          aria-expanded={specialOpen}
+          onClick={() => {
+            if (specialOpen) {
+              setOpenMenu(null);
+              setOpenSpecialKind(null);
+              return;
+            }
+            setOpenMenu("special");
+          }}
           onMouseEnter={() => {
             setHovered(null);
             onHint?.("Gaussian blur and pixelation, each with Uniform, Vignette or Draw.");
@@ -199,42 +209,35 @@ export function PresetList({
               {selected ? <CheckMark size={10} /> : null}
             </span>
             <span className="min-w-0 flex-1 text-left">Blur / Pixelate</span>
-            <span className="text-[11px]">
-              {openMenu === "special" || openMenu === "gaussian" || openMenu === "pixelate" ? "▼" : "▶"}
-            </span>
+            <span className="text-[11px]">{specialOpen ? "▼" : "▶"}</span>
           </span>
         </button>
 
-        <div
-          className={
-            "overflow-hidden transition-[max-height,opacity] duration-150 ease-out " +
-            (openMenu === "special" || openMenu === "gaussian" || openMenu === "pixelate"
-              ? "max-h-[500px] opacity-100"
-              : "pointer-events-none max-h-0 opacity-0")
-          }
-          aria-hidden={openMenu !== "special" && openMenu !== "gaussian" && openMenu !== "pixelate"}
-        >
+        {specialOpen && (
           <div
             className="bevel-sunken mx-[3px] my-[2px] bg-[color:var(--face)] p-[2px]"
             role="menu"
             aria-label="Blur / Pixelate"
           >
             {SPECIAL_KINDS.map((kind) => {
-              const open = openMenu === kind;
+              const kindOpen = openSpecialKind === kind;
               const active = specialEffect.kind === kind;
+
               return (
-                <div key={kind}>
+                <div key={kind} className="relative">
                   <button
                     type="button"
                     className="ui-item text-[12px] pl-[18px]"
                     style={
-                      open || active
+                      kindOpen || active
                         ? { backgroundColor: "var(--sel)", color: "#ffffff" }
                         : undefined
                     }
                     aria-haspopup="menu"
-                    aria-expanded={open}
-                    onClick={() => setOpenMenu((current) => (current === kind ? "special" : kind))}
+                    aria-expanded={kindOpen}
+                    onClick={() =>
+                      setOpenSpecialKind((current) => (current === kind ? null : kind))
+                    }
                     onMouseEnter={() => {
                       setHovered(null);
                       onHint?.(
@@ -249,60 +252,63 @@ export function PresetList({
                         {active ? <CheckMark size={10} /> : null}
                       </span>
                       <span className="flex-1 text-left">{SPECIAL_EFFECT_LABELS[kind]}</span>
-                      <span className="text-[11px]">{open ? "▼" : "▶"}</span>
+                      <span className="text-[11px]">{kindOpen ? "▼" : "▶"}</span>
                     </span>
                   </button>
 
-                  <div
-                    className={
-                      "overflow-hidden transition-[max-height,opacity] duration-150 ease-out " +
-                      (open ? "max-h-[160px] opacity-100" : "pointer-events-none max-h-0 opacity-0")
-                    }
-                    aria-hidden={!open}
-                  >
-                    <div className="mx-[6px] my-[1px] border-l border-[color:var(--shadow)]">
-                      {MODES.map((mode) => {
-                        const modeActive = specialEffect.kind === kind && specialEffect.mode === mode;
-                        return (
-                          <button
-                            key={mode}
-                            type="button"
-                            role="menuitem"
-                            className="ui-item pl-[24px] text-[12px]"
-                            style={
-                              modeActive
-                                ? { backgroundColor: "var(--sel)", color: "#ffffff" }
-                                : undefined
-                            }
-                            aria-pressed={modeActive}
-                            onClick={() => {
-                              onChooseSpecialEffect(kind, mode);
-                              setOpenMenu(null);
-                              onHint?.(
-                                mode === "draw"
-                                  ? "Drag over the photo to paint the effect."
-                                  : mode === "vignette"
-                                    ? "The effect is strongest near the edges."
-                                    : "The effect covers the complete photo.",
-                              );
-                            }}
-                          >
-                            <span className="flex items-center gap-1">
-                              <span className="w-[12px] shrink-0">
-                                {modeActive ? <CheckMark size={10} /> : null}
+                  {kindOpen && (
+                    <div
+                      className="mt-[1px] overflow-hidden"
+                      role="menu"
+                      aria-label={SPECIAL_EFFECT_LABELS[kind]}
+                    >
+                      <div className="mx-[6px] border-l border-[color:var(--shadow)]">
+                        {MODES.map((mode) => {
+                          const modeActive =
+                            specialEffect.kind === kind && specialEffect.mode === mode;
+
+                          return (
+                            <button
+                              key={mode}
+                              type="button"
+                              role="menuitem"
+                              className="ui-item pl-[24px] text-[12px]"
+                              style={
+                                modeActive
+                                  ? { backgroundColor: "var(--sel)", color: "#ffffff" }
+                                  : undefined
+                              }
+                              aria-pressed={modeActive}
+                              onClick={() => {
+                                onChooseSpecialEffect(kind, mode);
+                                setOpenSpecialKind(null);
+                                setOpenMenu(null);
+                                onHint?.(
+                                  mode === "draw"
+                                    ? "Drag over the photo to paint the effect."
+                                    : mode === "vignette"
+                                      ? "The effect is strongest near the edges."
+                                      : "The effect covers the complete photo.",
+                                );
+                              }}
+                            >
+                              <span className="flex items-center gap-1">
+                                <span className="w-[12px] shrink-0">
+                                  {modeActive ? <CheckMark size={10} /> : null}
+                                </span>
+                                <span className="capitalize">{mode}</span>
                               </span>
-                              <span className="capitalize">{mode}</span>
-                            </span>
-                          </button>
-                        );
-                      })}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })}
           </div>
-        </div>
+        )}
       </div>
     );
   };
