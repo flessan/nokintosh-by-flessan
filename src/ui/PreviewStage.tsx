@@ -47,7 +47,6 @@ export function PreviewStage({
   flipVertical: boolean;
   specialEffect: SpecialEffectState;
   onZoomChange: (value: number) => void;
-  onToggleZoom: () => void;
   onPanChange: (value: { x: number; y: number }) => void;
   onZoomWheel: (delta: number) => void;
   onToggleMirror: () => void;
