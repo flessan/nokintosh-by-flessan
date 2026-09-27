@@ -24,7 +24,6 @@ export function PreviewStage({
   flipVertical,
   specialEffect,
   onZoomChange,
-  onToggleZoom,
   onPanChange,
   onZoomWheel,
   onToggleMirror,
