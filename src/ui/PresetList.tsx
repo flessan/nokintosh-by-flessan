@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PRESETS } from "../engine/presets";
 import type {
   SpecialEffectKind,
@@ -53,6 +53,31 @@ export function PresetList({
   const [openMenu, setOpenMenu] = useState<
     "filters" | "camera2" | "special" | "gaussian" | "pixelate" | null
   >(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (openMenu === null) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenu(null);
+        onHint?.(null);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpenMenu(null);
+        onHint?.(null);
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [openMenu, onHint]);
 
   const renderItem = (p: (typeof PRESETS)[number], nested = false) => {
     const selected = p.id === presetId;
@@ -97,7 +122,7 @@ export function PresetList({
     items: typeof FILTER_PRESETS,
     selected: boolean,
   ) => (
-    <div className="relative" onMouseEnter={() => setOpenMenu(menu)}>
+    <div className="relative">
       <button
         type="button"
         className="ui-item text-[12px]"
@@ -111,7 +136,6 @@ export function PresetList({
         onClick={() => setOpenMenu((current) => (current === menu ? null : menu))}
         onMouseEnter={() => {
           setHovered(null);
-          setOpenMenu(menu);
           onHint?.(
             menu === "filters"
               ? "B&W, sepia and other generic image filters."
@@ -147,7 +171,7 @@ export function PresetList({
   const renderSpecialMenu = () => {
     const selected = specialEffect.kind !== "none";
     return (
-      <div className="relative" onMouseEnter={() => setOpenMenu("special")}>
+      <div className="relative">
         <button
           type="button"
           className="ui-item text-[12px]"
@@ -167,7 +191,6 @@ export function PresetList({
           }
           onMouseEnter={() => {
             setHovered(null);
-            setOpenMenu("special");
             onHint?.("Gaussian blur and pixelation, each with Uniform, Vignette or Draw.");
           }}
         >
@@ -214,7 +237,6 @@ export function PresetList({
                     onClick={() => setOpenMenu((current) => (current === kind ? "special" : kind))}
                     onMouseEnter={() => {
                       setHovered(null);
-                      setOpenMenu(kind);
                       onHint?.(
                         kind === "gaussian-blur"
                           ? "Gaussian blur with three application modes."
@@ -289,14 +311,7 @@ export function PresetList({
   const camera2Selected = CAMERA2_PRESETS.some((p) => p.id === presetId);
 
   return (
-    <div
-      className="relative bg-white"
-      onMouseLeave={() => {
-        setOpenMenu(null);
-        setHovered(null);
-        onHint?.(null);
-      }}
-    >
+    <div ref={menuRef} className="relative bg-white">
       {renderItem(ORIGINAL)}
       {renderMenu("Filters", "filters", FILTER_PRESETS, filtersSelected)}
       {renderSpecialMenu()}
