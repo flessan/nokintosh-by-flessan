@@ -49,8 +49,9 @@ The Effects panel exposes 14 digicam-oriented controls grouped as:
 `Exposure`, `Contrast`, `Saturation`, `Temperature`, `Fade`
 
 These controls are deliberately narrower than a professional photo editor:
-there are no layers, masks, curves, HSL, brushes, typography, crop tools,
-selection tools, or timeline/compositing systems.
+there is no general-purpose layer/mask/brush system, curves, HSL, typography,
+crop tools, selection tools, or timeline/compositing system. The only brush-like
+interaction is the purpose-built **Draw** mode for Blur / Pixelate.
 
 ### Blur / Pixelate
 
