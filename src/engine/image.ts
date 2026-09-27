@@ -102,4 +102,4 @@ export function releasePhoto(photo: LoadedPhoto | null) {
 }
 
 export const SAMPLE_IMAGE_URL =
-  "https://images.pexels.com/photos/34318011/pexels-photo-34318011.jpeg?auto=compress&cs=tinysrgb&w=1800";
+  "https://telestorage.pages.dev/file/AgACAgUAAyEGAAMBC6Lh6AADBWqxVuUYTddWeB3-r7b44AjxqLRuAAI3E2sbzlGIVaxUXBFSUj1JAQADAgADeAADPQQ.png";
