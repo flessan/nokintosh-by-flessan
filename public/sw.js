@@ -1,5 +1,5 @@
 /* Nokintosh service worker: cache the app shell so the editor works offline. */
-const CACHE = "nokintosh-shell-v1";
+const CACHE = "nokintosh-shell-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -37,13 +37,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Never proxy/cache cross-origin requests through this service worker.
+  // Public samples and other remote assets must be fetched by the browser so
+  // their normal CORS behavior is preserved.
+  if (new URL(req.url).origin !== self.location.origin) return;
+
   event.respondWith(
     caches.match(req).then(
       (hit) =>
         hit ||
         fetch(req)
           .then((res) => {
-            if (res.ok && new URL(req.url).origin === self.location.origin) {
+            if (res.ok) {
               const copy = res.clone();
               caches.open(CACHE).then((c) => c.put(req, copy));
             }
