@@ -235,7 +235,15 @@ export function PreviewStage({
               suppressClickRef.current = false;
               return;
             }
-            onToggleZoom();
+
+            // Clicking the photo toggles between fit and a focused 200% view.
+            // Any zoom level above fit returns all the way to fit, including
+            // zoom levels reached with the wheel/slider.
+            if (zoom > 1) {
+              onZoomChange(1);
+            } else {
+              onZoomChange(2);
+            }
           }}
           aria-label={photo ? "Preview of " + photo.name : "Photo preview"}
         />
