@@ -286,7 +286,7 @@ export function useEditor() {
   }, []);
 
   const disableSpecialEffect = useCallback(() => {
-    setSpecialEffect((prev) => ({ ...prev, kind: "none", strokes: [] }));
+    setSpecialEffect(cloneSpecialEffect(DEFAULT_SPECIAL_EFFECT));
     setPresetId("custom");
     setStatus("Blur / Pixelate disabled.");
   }, []);
