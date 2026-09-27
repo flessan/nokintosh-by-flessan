@@ -351,52 +351,53 @@ export default function App() {
         ? `CPU  ${info.previewWidth}x${info.previewHeight}`
         : "idle";
 
-  const panels = (
-    <>
-      <GroupBox label="Presets">
-        <PresetList
-          presetId={presetId}
-          specialEffect={specialEffect}
-          onPick={editor.applyPreset}
-          onChooseSpecialEffect={editor.chooseSpecialEffect}
-          onHint={setHint}
-        />
-      </GroupBox>
-      <GroupBox label="Effects">
-        <EffectsPanel
-          params={params}
-          specialEffect={specialEffect}
-          onChange={editor.setParam}
-          onCommitStart={editor.beginAdjust}
-          onCommitEnd={editor.endAdjust}
-          onHint={setHint}
-          onApply={editor.applyChanges}
-          canApply={editor.hasUnappliedChanges}
-          onChooseSpecialEffect={editor.chooseSpecialEffect}
-          onSetSpecialEffectAmount={editor.setSpecialEffectAmount}
-          onSetSpecialEffectBrushSize={editor.setSpecialEffectBrushSize}
-          onClearSpecialEffectMask={editor.clearSpecialEffectMask}
-          onDisableSpecialEffect={editor.disableSpecialEffect}
-        />
-        <div className="mt-2 flex gap-2 px-[5px] pb-1">
-          <Button className="flex-1" onClick={editor.resetAll}>
-            Reset All
-          </Button>
-          <Button
-            className="flex-1"
-            data-pressed={showOriginal}
-            aria-pressed={showOriginal}
-            onPointerDown={() => setShowOriginal(true)}
-            onPointerUp={() => setShowOriginal(false)}
-            onPointerLeave={() => setShowOriginal(false)}
-            onKeyDown={(e) => e.key === "Enter" && setShowOriginal(true)}
-            onKeyUp={() => setShowOriginal(false)}
-          >
-            Hold: Original
-          </Button>
-        </div>
-      </GroupBox>
-    </>
+  const presetsPanel = (
+    <GroupBox label="Presets">
+      <PresetList
+        presetId={presetId}
+        specialEffect={specialEffect}
+        onPick={editor.applyPreset}
+        onChooseSpecialEffect={editor.chooseSpecialEffect}
+        onHint={setHint}
+      />
+    </GroupBox>
+  );
+
+  const effectsPanel = (
+    <GroupBox label="Effects">
+      <EffectsPanel
+        params={params}
+        specialEffect={specialEffect}
+        onChange={editor.setParam}
+        onCommitStart={editor.beginAdjust}
+        onCommitEnd={editor.endAdjust}
+        onHint={setHint}
+        onApply={editor.applyChanges}
+        canApply={editor.hasUnappliedChanges}
+        onChooseSpecialEffect={editor.chooseSpecialEffect}
+        onSetSpecialEffectAmount={editor.setSpecialEffectAmount}
+        onSetSpecialEffectBrushSize={editor.setSpecialEffectBrushSize}
+        onClearSpecialEffectMask={editor.clearSpecialEffectMask}
+        onDisableSpecialEffect={editor.disableSpecialEffect}
+      />
+      <div className="mt-2 flex gap-2 px-[5px] pb-1">
+        <Button className="flex-1" onClick={editor.resetAll}>
+          Reset All
+        </Button>
+        <Button
+          className="flex-1"
+          data-pressed={showOriginal}
+          aria-pressed={showOriginal}
+          onPointerDown={() => setShowOriginal(true)}
+          onPointerUp={() => setShowOriginal(false)}
+          onPointerLeave={() => setShowOriginal(false)}
+          onKeyDown={(e) => e.key === "Enter" && setShowOriginal(true)}
+          onKeyUp={() => setShowOriginal(false)}
+        >
+          Hold: Original
+        </Button>
+      </div>
+    </GroupBox>
   );
 
   return (
@@ -459,8 +460,15 @@ export default function App() {
 
         {/* ---- workspace ---- */}
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          {/* preview */}
-          <main className="order-1 flex min-h-[32vh] flex-1 flex-col p-[3px] lg:order-2 lg:min-h-0">
+          {/* presets: desktop left */}
+          <aside className="order-1 hidden w-[244px] shrink-0 flex-col overflow-hidden bg-[color:var(--face)] lg:flex">
+            <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
+              {presetsPanel}
+            </div>
+          </aside>
+
+          {/* preview: desktop center */}
+          <main className="order-2 flex min-h-[32vh] min-w-0 flex-1 flex-col p-[3px] lg:min-h-0">
             <PreviewStage
               photo={photo}
               canvasRef={canvasRef}
@@ -487,13 +495,15 @@ export default function App() {
             />
           </main>
 
-          {/* side panel: desktop */}
-          <aside className="order-2 hidden w-[244px] shrink-0 flex-col overflow-hidden bg-[color:var(--face)] lg:order-1 lg:flex">
-            <div className="scroll-thin flex min-h-0 flex-1 flex-col overflow-y-auto">{panels}</div>
+          {/* effects: desktop right */}
+          <aside className="order-3 hidden w-[244px] shrink-0 flex-col overflow-hidden bg-[color:var(--face)] lg:flex">
+            <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
+              {effectsPanel}
+            </div>
           </aside>
 
           {/* side panel: mobile / tablet */}
-          <section className="order-3 flex shrink-0 flex-col bg-[color:var(--face)] lg:hidden">
+          <section className="order-4 flex shrink-0 flex-col bg-[color:var(--face)] lg:hidden">
             <div className="flex gap-[2px] px-[3px] pt-[3px]">
               {(["presets", "effects"] as const).map((t) => (
                 <button
@@ -512,50 +522,7 @@ export default function App() {
               ))}
             </div>
             <div className="scroll-thin max-h-[40vh] overflow-y-auto">
-              {tab === "presets" ? (
-                <GroupBox label="Presets">
-                  <PresetList
-                    presetId={presetId}
-                    specialEffect={specialEffect}
-                    onPick={editor.applyPreset}
-                    onChooseSpecialEffect={editor.chooseSpecialEffect}
-                    onHint={setHint}
-                  />
-                </GroupBox>
-              ) : (
-                <GroupBox label="Effects">
-                  <EffectsPanel
-                    params={params}
-                    specialEffect={specialEffect}
-                    onChange={editor.setParam}
-                    onCommitStart={editor.beginAdjust}
-                    onCommitEnd={editor.endAdjust}
-                    onHint={setHint}
-                    onApply={editor.applyChanges}
-                    canApply={editor.hasUnappliedChanges}
-                    onChooseSpecialEffect={editor.chooseSpecialEffect}
-                    onSetSpecialEffectAmount={editor.setSpecialEffectAmount}
-                    onSetSpecialEffectBrushSize={editor.setSpecialEffectBrushSize}
-                    onClearSpecialEffectMask={editor.clearSpecialEffectMask}
-                    onDisableSpecialEffect={editor.disableSpecialEffect}
-                  />
-                  <div className="mt-2 flex gap-2 px-[5px] pb-1">
-                    <Button className="flex-1" onClick={editor.resetAll}>
-                      Reset All
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      data-pressed={showOriginal}
-                      aria-pressed={showOriginal}
-                      onPointerDown={() => setShowOriginal(true)}
-                      onPointerUp={() => setShowOriginal(false)}
-                      onPointerLeave={() => setShowOriginal(false)}
-                    >
-                      Hold: Original
-                    </Button>
-                  </div>
-                </GroupBox>
-              )}
+              {tab === "presets" ? presetsPanel : effectsPanel}
             </div>
           </section>
         </div>
