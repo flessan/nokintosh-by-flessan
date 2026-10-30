@@ -17,6 +17,7 @@ import { ExportDialog } from "./ui/ExportDialog";
 import { CameraMark, GithubIcon } from "./ui/icons";
 import { MenuBar, type Menu } from "./ui/MenuBar";
 import { PresetList } from "./ui/PresetList";
+import { FilterPicker } from "./ui/FilterPicker";
 import { FramePicker } from "./ui/FramePicker";
 import { FRAME_OPTIONS } from "./engine/frame";
 import { SavedLooksPanel } from "./ui/SavedLooksPanel";
@@ -34,7 +35,7 @@ export default function App() {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragOver, setDragOver] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
-  const [tab, setTab] = useState<"looks" | "frames" | "effects">("looks");
+  const [tab, setTab] = useState<"looks" | "filters" | "frames" | "effects">("looks");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportOpts, setExportOpts] = useState<ExportOptions>({
@@ -290,6 +291,7 @@ export default function App() {
             separatorAfter: true,
           },
           { label: "Looks Panel", checked: tab === "looks", action: () => setTab("looks") },
+          { label: "Filters Panel", checked: tab === "filters", action: () => setTab("filters") },
           { label: "Frames Panel", checked: tab === "frames", action: () => setTab("frames") },
           { label: "Effects Panel", checked: tab === "effects", action: () => setTab("effects") },
         ],
@@ -387,6 +389,7 @@ export default function App() {
       <GroupBox label="Camera looks">
         <PresetList
           presetId={presetId}
+          photo={photo}
           onPick={editor.applyPreset}
           onHint={setHint}
         />
@@ -394,11 +397,22 @@ export default function App() {
     </>
   );
 
+  const filtersPanel = (
+    <GroupBox label="Quick filters">
+      <FilterPicker
+        presetId={presetId}
+        photo={photo}
+        onPick={editor.applyPreset}
+        onHint={setHint}
+      />
+    </GroupBox>
+  );
+
   const framesPanel = (
     <GroupBox label="Photo frames">
       <FramePicker
         value={frame}
-        disabled={!photo}
+        photo={photo}
         onPick={editor.chooseFrame}
       />
     </GroupBox>
@@ -506,8 +520,8 @@ export default function App() {
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           {/* presets: desktop left */}
           <aside className="order-1 hidden w-[264px] shrink-0 flex-col overflow-hidden bg-[color:var(--face)] lg:flex">
-            <div className="grid grid-cols-2 gap-[2px] bg-[color:var(--face)] p-[3px]">
-              {(["looks", "frames"] as const).map((item) => (
+            <div className="editor-panel-tabs grid grid-cols-3 gap-[2px] bg-[color:var(--face)] p-[3px]">
+              {(["looks", "filters", "frames"] as const).map((item) => (
                 <button
                   key={item}
                   type="button"
@@ -521,7 +535,7 @@ export default function App() {
               ))}
             </div>
             <div className="scroll-thin min-h-0 flex-1 overflow-y-auto border-t border-[color:var(--shadow)]">
-              {tab === "frames" ? framesPanel : looksPanel}
+              {tab === "frames" ? framesPanel : tab === "filters" ? filtersPanel : looksPanel}
             </div>
           </aside>
 
@@ -561,8 +575,8 @@ export default function App() {
 
           {/* side panel: mobile / tablet */}
           <section className="order-4 flex shrink-0 flex-col bg-[color:var(--face)] lg:hidden">
-            <div className="flex gap-[2px] px-[3px] pt-[3px]">
-              {(["looks", "frames", "effects"] as const).map((t) => (
+            <div className="editor-panel-tabs grid grid-cols-4 gap-[2px] px-[3px] pt-[3px]">
+              {(["looks", "filters", "frames", "effects"] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -579,7 +593,7 @@ export default function App() {
               ))}
             </div>
             <div className="scroll-thin max-h-[42vh] overflow-y-auto">
-              {tab === "looks" ? looksPanel : tab === "frames" ? framesPanel : effectsPanel}
+              {tab === "looks" ? looksPanel : tab === "filters" ? filtersPanel : tab === "frames" ? framesPanel : effectsPanel}
             </div>
           </section>
         </div>
