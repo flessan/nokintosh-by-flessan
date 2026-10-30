@@ -69,6 +69,7 @@ export default function App() {
       params: editor.params,
       filter: editor.filter,
       frame: editor.frame,
+      framePosition: editor.framePosition,
       transform: editor.transform,
       specialEffect: editor.specialEffect,
     });

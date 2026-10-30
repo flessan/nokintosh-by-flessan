@@ -3,9 +3,11 @@ import type {
   EffectParams,
   FilterMode,
   FrameMode,
+  FramePosition,
   SpecialEffectState,
 } from "../engine/types";
 import type { ImageTransform } from "../engine/transform";
+import { DEFAULT_FRAME_POSITION, normalizeFramePosition } from "../engine/frame";
 
 export interface SavedLook {
   id: string;
@@ -14,6 +16,7 @@ export interface SavedLook {
   params: EffectParams;
   filter: FilterMode;
   frame: FrameMode;
+  framePosition: FramePosition;
   transform: ImageTransform;
   specialEffect: SpecialEffectState;
 }
@@ -71,6 +74,11 @@ function isSavedLook(value: unknown): value is SavedLook {
     FILTERS.has(item.filter as FilterMode) &&
     typeof item.frame === "string" &&
     FRAMES.has(item.frame) &&
+    (item.framePosition === undefined ||
+      (!!item.framePosition && typeof item.framePosition === "object" &&
+        typeof (item.framePosition as Record<string, unknown>).zoom === "number" &&
+        typeof (item.framePosition as Record<string, unknown>).x === "number" &&
+        typeof (item.framePosition as Record<string, unknown>).y === "number")) &&
     !!transform &&
     typeof transform.mirror === "boolean" &&
     typeof transform.flipVertical === "boolean" &&
@@ -108,6 +116,7 @@ function readSavedLooks(): SavedLook[] {
 function cloneLook(look: Omit<SavedLook, "id" | "createdAt">): Omit<SavedLook, "id" | "createdAt"> {
   return {
     ...look,
+    framePosition: normalizeFramePosition(look.framePosition ?? DEFAULT_FRAME_POSITION),
     params: { ...look.params },
     transform: { ...look.transform },
     specialEffect: {
