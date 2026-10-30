@@ -425,7 +425,6 @@ export function useEditor() {
     setFilter(snap.filter);
     setFrame(snap.frame);
     setFramePositionState({ ...snap.framePosition });
-    setAppliedFramePosition({ ...snap.framePosition });
     setAppliedParams({ ...restored });
     setAppliedPresetId(snap.presetId);
     setAppliedFilter(snap.filter);
@@ -473,7 +472,6 @@ export function useEditor() {
     setFilter(snap.filter);
     setFrame(snap.frame);
     setFramePositionState({ ...snap.framePosition });
-    setAppliedFramePosition({ ...snap.framePosition });
     setAppliedParams({ ...restored });
     setAppliedPresetId(snap.presetId);
     setAppliedFilter(snap.filter);
@@ -492,6 +490,7 @@ export function useEditor() {
     presetId !== appliedPresetId ||
     filter !== appliedFilter ||
     frame !== appliedFrame ||
+    !sameFramePosition(framePosition, appliedFramePosition) ||
     !sameTransform(transform, appliedTransform) ||
     !sameSpecialEffect(specialEffect, appliedSpecialEffect);
 
