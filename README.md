@@ -28,11 +28,16 @@ The preset library currently contains **28 looks**:
   Nikon COOLPIX, Fujifilm FinePix, Casio Exilim, Olympus CAMEDIA, Panasonic Lumix,
   Kodak EasyShare, Pentax Optio, Samsung Digimax, Early Camera Phone,
   Night Flash Compact
-- **Frames:** Windows 98 photo window, Instant Print, 35mm Film, Contact Sheet,
-  Camera LCD playback, and Paper Collage
 
 The named camera profiles are character presets, not claims of exact hardware
 color-science replication.
+
+### Photo frames
+
+The Frames panel applies a border to the photo itself. Available styles include
+Windows 98, Instant Print, 35mm Film, Contact Sheet, Camera LCD playback, and
+Paper Collage. The frame is baked into the exported image and keeps the original
+output dimensions.
 
 ### My Camera Looks
 
