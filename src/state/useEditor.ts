@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { SavedLook } from "./useSavedLooks";
 import {
   isAcceptedFile,
   loadFromFile,
@@ -160,6 +161,17 @@ export function useEditor() {
     setFrame(preset.frame ?? "none");
     setSpecialEffect(cloneSpecialEffect(DEFAULT_SPECIAL_EFFECT));
     setStatus("[Loading] " + preset.name + " // " + preset.note);
+  }, []);
+
+  /** Loads a browser-saved look into the live draft without committing history. */
+  const applySavedLook = useCallback((look: SavedLook) => {
+    setParams({ ...look.params });
+    setPresetId("custom");
+    setFilter(look.filter);
+    setFrame(look.frame);
+    setTransform({ ...look.transform });
+    setSpecialEffect(cloneSpecialEffect(look.specialEffect));
+    setStatus("[Loading] Saved look // " + look.name);
   }, []);
 
   /**
@@ -468,6 +480,7 @@ export function useEditor() {
     openSample,
     closePhoto,
     applyPreset,
+    applySavedLook,
     applyChanges,
     toggleMirror,
     toggleFlipVertical,

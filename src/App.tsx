@@ -11,11 +11,14 @@ import { PRESETS, PRESET_MAP } from "./engine/presets";
 import { SPECIAL_EFFECT_LABELS } from "./engine/specialEffect";
 import { useEditor } from "./state/useEditor";
 import { usePreview } from "./state/usePreview";
+import { useSavedLooks } from "./state/useSavedLooks";
 import { EffectsPanel } from "./ui/EffectsPanel";
 import { ExportDialog } from "./ui/ExportDialog";
 import { CameraMark, GithubIcon } from "./ui/icons";
 import { MenuBar, type Menu } from "./ui/MenuBar";
 import { PresetList } from "./ui/PresetList";
+import { SavedLooksPanel } from "./ui/SavedLooksPanel";
+import { WindowControls } from "./ui/WindowControls";
 import { PreviewStage } from "./ui/PreviewStage";
 import { StatusBar } from "./ui/StatusBar";
 import { Button, GroupBox } from "./ui/widgets";
@@ -24,6 +27,9 @@ const REPO_URL = "https://github.com/flessan/nokintosh-by-flessan";
 
 export default function App() {
   const editor = useEditor();
+  const { looks, saveLook, deleteLook } = useSavedLooks();
+  const [windowHidden, setWindowHidden] = useState(false);
+  const [windowMaximized, setWindowMaximized] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -56,6 +62,18 @@ export default function App() {
 
   // ---------- file input ----------
   const pickFile = useCallback(() => fileInput.current?.click(), []);
+
+  const saveCurrentLook = useCallback((name: string) => {
+    const saved = saveLook({
+      name,
+      params: editor.params,
+      filter: editor.filter,
+      frame: editor.frame,
+      transform: editor.transform,
+      specialEffect: editor.specialEffect,
+    });
+    editor.setStatus("Saved look: " + saved.name);
+  }, [editor, saveLook]);
 
   // ---------- drag & drop ----------
   useEffect(() => {
@@ -348,7 +366,15 @@ export default function App() {
         : "idle";
 
   const presetsPanel = (
-    <GroupBox label="Presets">
+    <>
+      <SavedLooksPanel
+        looks={looks}
+        canSave={!!photo && looks.length < 24}
+        onSave={saveCurrentLook}
+        onApply={editor.applySavedLook}
+        onDelete={deleteLook}
+      />
+      <GroupBox label="Presets">
       <PresetList
         presetId={presetId}
         specialEffect={specialEffect}
@@ -356,7 +382,8 @@ export default function App() {
         onChooseSpecialEffect={editor.chooseSpecialEffect}
         onHint={setHint}
       />
-    </GroupBox>
+      </GroupBox>
+    </>
   );
 
   const effectsPanel = (
@@ -397,8 +424,8 @@ export default function App() {
   );
 
   return (
-    <div className="flex h-[100dvh] w-full justify-center bg-[color:var(--desktop)] lg:items-center lg:p-4">
-      <div className="bevel-raised flex h-full w-full max-w-[1440px] flex-col p-[3px] lg:h-[min(940px,100%)]">
+    <div className={`relative flex h-[100dvh] w-full justify-center bg-[color:var(--desktop)] ${windowMaximized ? "" : "lg:items-center lg:p-4"}`}>
+      <div className={`window-frame bevel-raised flex h-full w-full flex-col p-[3px] ${windowMaximized ? "max-w-none" : "max-w-[1440px] lg:h-[min(940px,100%)]"} ${windowHidden ? "hidden" : ""}`}>
         {/* ---- title bar ---- */}
         <div className="title-bar shrink-0 overflow-hidden">
           <span className="mr-2 flex items-center">
@@ -418,6 +445,16 @@ export default function App() {
           >
             <GithubIcon size={16} />
           </a>
+          <WindowControls
+            maximized={windowMaximized}
+            onMinimize={() => setWindowHidden(true)}
+            onMaximize={() => setWindowMaximized((value) => !value)}
+            onClose={() => {
+              setWindowHidden(true);
+              setWindowMaximized(false);
+              editor.setStatus("Window closed. Restore Nokintosh to continue.");
+            }}
+          />
         </div>
 
         {/* ---- menu bar ---- */}
@@ -557,6 +594,19 @@ export default function App() {
         onClose={() => setDialogOpen(false)}
         onExport={(o) => void runExport(o)}
       />
+
+      {windowHidden && (
+        <button
+          type="button"
+          className="window-restore"
+          onClick={() => setWindowHidden(false)}
+          aria-label="Restore Nokintosh window"
+        >
+          <CameraMark />
+          <span>Nokintosh</span>
+          <span className="text-[10px] font-normal opacity-70">Restore window</span>
+        </button>
+      )}
     </div>
   );
 }

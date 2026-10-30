@@ -32,6 +32,13 @@ The preset library currently contains **26 looks**:
 The named camera profiles are character presets, not claims of exact hardware
 color-science replication.
 
+### My Camera Looks
+
+Save your own effect combinations with a name and reuse them later. Saved looks
+include the complete camera settings, filter, collage frame, image transforms,
+and Blur / Pixelate configuration. They are stored locally in the current
+browser (up to 24 looks) and never uploaded.
+
 ### Core controls
 
 The Effects panel exposes 14 digicam-oriented controls grouped as:
@@ -220,9 +227,11 @@ requests, so the browser can apply the normal CORS rules directly.
 
 ## Design direction
 
-The interface intentionally follows a compact Windows 2000 / early-XP utility
-language: grey surfaces, hard borders, beveled controls, a classic title bar,
-small practical menus, and restrained blue selection states.
+The interface follows a compact Windows 9x / Windows 2000 utility language:
+a vivid blue title bar, a raised grey window frame, classic window controls,
+hard borders, beveled buttons, compact menus, and restrained blue selection
+states. The window can be minimized, maximized, or hidden and restored without
+discarding the current editing session.
 
 It avoids gradients, glassmorphism, neon glow, cyberpunk styling, and generic
 SaaS dashboard patterns.
