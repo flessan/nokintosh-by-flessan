@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { PointerEvent, RefObject } from "react";
-import type { DrawPoint, SpecialEffectState } from "../engine/types";
+import type { DrawPoint, FrameMode, FramePosition, SpecialEffectState } from "../engine/types";
+import { normalizeFramePosition } from "../engine/frame";
 import type { LoadedPhoto } from "../engine/image";
 import { Button } from "./widgets";
 import { FlipVerticalIcon, MirrorIcon } from "./icons";
@@ -18,11 +19,14 @@ export function PreviewStage({
   loading,
   rendering,
   presetName,
+  frame,
+  framePosition,
   zoom,
   pan,
   mirror,
   flipVertical,
   specialEffect,
+  onFramePositionChange,
   onZoomChange,
   onPanChange,
   onZoomWheel,
@@ -40,11 +44,14 @@ export function PreviewStage({
   loading: boolean;
   rendering: boolean;
   presetName: string;
+  frame: FrameMode;
+  framePosition: FramePosition;
   zoom: number;
   pan: { x: number; y: number };
   mirror: boolean;
   flipVertical: boolean;
   specialEffect: SpecialEffectState;
+  onFramePositionChange: (position: FramePosition) => void;
   onZoomChange: (value: number) => void;
   onPanChange: (value: { x: number; y: number }) => void;
   onZoomWheel: (delta: number) => void;
@@ -57,6 +64,14 @@ export function PreviewStage({
   const zoomLabel = Math.round(zoom * 100) + "%";
   const [draftStroke, setDraftStroke] = useState<DrawPoint[] | null>(null);
   const drawRef = useRef<{ pointerId: number; points: DrawPoint[] } | null>(null);
+  const frameDragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+    moved: boolean;
+  } | null>(null);
   const dragRef = useRef<{
     pointerId: number;
     startX: number;
@@ -69,6 +84,7 @@ export function PreviewStage({
 
   const drawMode =
     specialEffect.kind !== "none" && specialEffect.mode === "draw";
+  const frameDragMode = frame !== "none" && !drawMode;
 
   const toPoint = (event: PointerEvent<HTMLCanvasElement>): DrawPoint | null => {
     const canvas = canvasRef.current;
@@ -126,9 +142,11 @@ export function PreviewStage({
               photo
                 ? drawMode
                   ? "cursor-crosshair"
-                  : zoom > 1
+                  : frameDragMode
                     ? "cursor-grab"
-                    : "cursor-zoom-in"
+                    : zoom > 1
+                      ? "cursor-grab"
+                      : "cursor-zoom-in"
                 : "pointer-events-none absolute opacity-0"
             )
           }
@@ -158,6 +176,21 @@ export function PreviewStage({
               return;
             }
 
+            if (frameDragMode) {
+              e.preventDefault();
+              frameDragRef.current = {
+                pointerId: e.pointerId,
+                startX: e.clientX,
+                startY: e.clientY,
+                originX: framePosition.x,
+                originY: framePosition.y,
+                moved: false,
+              };
+              suppressClickRef.current = false;
+              e.currentTarget.setPointerCapture(e.pointerId);
+              return;
+            }
+
             if (zoom <= 1) return;
             dragRef.current = {
               pointerId: e.pointerId,
@@ -181,6 +214,23 @@ export function PreviewStage({
               }
               drawing.points.push(point);
               setDraftStroke([...drawing.points]);
+              return;
+            }
+
+            const frameDrag = frameDragRef.current;
+            if (frameDrag && frameDrag.pointerId === e.pointerId) {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const dx = e.clientX - frameDrag.startX;
+              const dy = e.clientY - frameDrag.startY;
+              if (Math.hypot(dx, dy) > 3) {
+                frameDrag.moved = true;
+                suppressClickRef.current = true;
+              }
+              onFramePositionChange(normalizeFramePosition({
+                ...framePosition,
+                x: frameDrag.originX + (rect.width > 0 ? (dx * 2) / rect.width : 0),
+                y: frameDrag.originY + (rect.height > 0 ? (dy * 2) / rect.height : 0),
+              }));
               return;
             }
 
@@ -213,6 +263,15 @@ export function PreviewStage({
               return;
             }
 
+            const frameDrag = frameDragRef.current;
+            if (frameDrag?.pointerId === e.pointerId) {
+              frameDragRef.current = null;
+              if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }
+              return;
+            }
+
             const drag = dragRef.current;
             if (!drag || drag.pointerId !== e.pointerId) return;
             dragRef.current = null;
@@ -225,6 +284,7 @@ export function PreviewStage({
               drawRef.current = null;
               setDraftStroke(null);
             }
+            frameDragRef.current = null;
             dragRef.current = null;
           }}
           onClick={() => {
