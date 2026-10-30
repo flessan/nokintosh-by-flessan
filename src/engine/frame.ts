@@ -106,6 +106,9 @@ function drawWindows98(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement,
   ctx.fillRect(outer, outer, w - outer * 2, titleHeight);
 
   const fontSize = Math.max(8, Math.round(titleHeight * 0.56));
+  const controlSize = Math.max(10, titleHeight - 5);
+  const controlGap = 3;
+  const controlsX = w - outer - controlSize * 3 - controlGap * 2 - 3;
   const iconSize = Math.max(7, Math.round(titleHeight * 0.48));
   const iconX = outer + Math.max(2, Math.round(outer * 0.7));
   const iconY = outer + Math.round((titleHeight - iconSize) / 2);
@@ -124,9 +127,6 @@ function drawWindows98(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement,
   ctx.textBaseline = "middle";
   ctx.fillText("Photo Viewer", iconX + iconSize + Math.max(3, outer), titleHeight * 0.5 + outer, Math.max(10, controlsX - iconX - iconSize - outer * 2));
 
-  const controlSize = Math.max(10, titleHeight - 5);
-  const controlGap = 3;
-  const controlsX = w - outer - controlSize * 3 - controlGap * 2 - 3;
   for (let i = 0; i < 3; i++) {
     const x = controlsX + i * (controlSize + controlGap);
     const y = outer + Math.round((titleHeight - controlSize) / 2);
@@ -424,40 +424,42 @@ export function applyFrame(canvas: HTMLCanvasElement, frame: FrameMode): void {
   sourceCtx.drawImage(canvas, 0, 0);
 
   ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, w, h);
+  try {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, w, h);
 
-  switch (frame) {
-    case "windows-98":
-      drawWindows98(ctx, source, w, h);
-      break;
-    case "polaroid":
-      drawPolaroid(ctx, source, w, h);
-      break;
-    case "film-strip":
-      drawFilmStrip(ctx, source, w, h);
-      break;
-    case "contact-sheet":
-      drawContactSheet(ctx, source, w, h);
-      break;
-    case "lcd-playback":
-      drawLcd(ctx, source, w, h);
-      break;
-    case "collage":
-      drawCollage(ctx, source, w, h);
-      break;
-    case "date-stamp":
-      drawDateStamp(ctx, source, w, h);
-      break;
-    case "mini-dv":
-      drawMiniDV(ctx, source, w, h);
-      break;
-    case "gallery-mat":
-      drawGalleryMat(ctx, source, w, h);
-      break;
+    switch (frame) {
+      case "windows-98":
+        drawWindows98(ctx, source, w, h);
+        break;
+      case "polaroid":
+        drawPolaroid(ctx, source, w, h);
+        break;
+      case "film-strip":
+        drawFilmStrip(ctx, source, w, h);
+        break;
+      case "contact-sheet":
+        drawContactSheet(ctx, source, w, h);
+        break;
+      case "lcd-playback":
+        drawLcd(ctx, source, w, h);
+        break;
+      case "collage":
+        drawCollage(ctx, source, w, h);
+        break;
+      case "date-stamp":
+        drawDateStamp(ctx, source, w, h);
+        break;
+      case "mini-dv":
+        drawMiniDV(ctx, source, w, h);
+        break;
+      case "gallery-mat":
+        drawGalleryMat(ctx, source, w, h);
+        break;
+    }
+  } finally {
+    ctx.restore();
+    source.width = 0;
+    source.height = 0;
   }
-
-  ctx.restore();
-  source.width = 0;
-  source.height = 0;
 }
