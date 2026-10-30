@@ -9,7 +9,8 @@ import {
   type LoadedPhoto,
 } from "../engine/image";
 import { paramsEqual, PRESET_MAP, PRESETS } from "../engine/presets";
-import { DEFAULT_PARAMS, type EffectParams, type FilterMode, type FrameMode, type ParamId } from "../engine/types";
+import { DEFAULT_FRAME_POSITION, normalizeFramePosition, sameFramePosition } from "../engine/frame";
+import { DEFAULT_PARAMS, type EffectParams, type FilterMode, type FrameMode, type FramePosition, type ParamId } from "../engine/types";
 import { IDENTITY_TRANSFORM, sameTransform, type ImageTransform } from "../engine/transform";
 import {
   appendDrawStroke,
@@ -29,6 +30,7 @@ interface Snapshot {
   presetId: string;
   filter: FilterMode;
   frame: FrameMode;
+  framePosition: FramePosition;
   transform: ImageTransform;
   specialEffect: SpecialEffectState;
 }
@@ -50,6 +52,7 @@ export function useEditor() {
   const [presetId, setPresetId] = useState<string>(INITIAL_PRESET_ID);
   const [filter, setFilter] = useState<FilterMode>(INITIAL_FILTER);
   const [frame, setFrame] = useState<FrameMode>(INITIAL_FRAME);
+  const [framePosition, setFramePositionState] = useState<FramePosition>({ ...DEFAULT_FRAME_POSITION });
   const [transform, setTransform] = useState<ImageTransform>({ ...IDENTITY_TRANSFORM });
   const [specialEffect, setSpecialEffect] = useState<SpecialEffectState>({
     ...INITIAL_SPECIAL_EFFECT,
@@ -61,6 +64,7 @@ export function useEditor() {
   const [appliedPresetId, setAppliedPresetId] = useState<string>(INITIAL_PRESET_ID);
   const [appliedFilter, setAppliedFilter] = useState<FilterMode>(INITIAL_FILTER);
   const [appliedFrame, setAppliedFrame] = useState<FrameMode>(INITIAL_FRAME);
+  const [appliedFramePosition, setAppliedFramePosition] = useState<FramePosition>({ ...DEFAULT_FRAME_POSITION });
   const [appliedTransform, setAppliedTransform] = useState<ImageTransform>({ ...IDENTITY_TRANSFORM });
   const [appliedSpecialEffect, setAppliedSpecialEffect] = useState<SpecialEffectState>({
     ...INITIAL_SPECIAL_EFFECT,
@@ -89,6 +93,7 @@ export function useEditor() {
         presetId: snap.presetId,
         filter: snap.filter,
         frame: snap.frame,
+        framePosition: { ...snap.framePosition },
         transform: { ...snap.transform },
         specialEffect: cloneSpecialEffect(snap.specialEffect),
       });
@@ -159,14 +164,21 @@ export function useEditor() {
     setPresetId(id);
     setFilter(preset.filter ?? "none");
     if (preset.frame && preset.frame !== "none") setFrame(preset.frame);
+    setFramePositionState({ ...DEFAULT_FRAME_POSITION });
     setSpecialEffect(cloneSpecialEffect(DEFAULT_SPECIAL_EFFECT));
     setStatus("[Loading] " + preset.name + " // " + preset.note);
   }, []);
 
   const chooseFrame = useCallback((nextFrame: FrameMode) => {
     setFrame(nextFrame);
+    setFramePositionState({ ...DEFAULT_FRAME_POSITION });
     setPresetId("custom");
     setStatus(nextFrame === "none" ? "Photo frame removed." : "Photo frame // " + nextFrame);
+  }, []);
+
+  const setFramePosition = useCallback((nextPosition: FramePosition) => {
+    setFramePositionState(normalizeFramePosition(nextPosition));
+    setPresetId("custom");
   }, []);
 
   /** Loads a browser-saved look into the live draft without committing history. */
@@ -175,6 +187,7 @@ export function useEditor() {
     setPresetId("custom");
     setFilter(look.filter);
     setFrame(look.frame);
+    setFramePositionState(normalizeFramePosition(look.framePosition ?? DEFAULT_FRAME_POSITION));
     setTransform({ ...look.transform });
     setSpecialEffect(cloneSpecialEffect(look.specialEffect));
     setStatus("[Loading] Saved look // " + look.name);
@@ -192,6 +205,7 @@ export function useEditor() {
       presetId !== appliedPresetId ||
       filter !== appliedFilter ||
       frame !== appliedFrame ||
+      !sameFramePosition(framePosition, appliedFramePosition) ||
       !sameTransform(transform, appliedTransform) ||
       !sameSpecialEffect(specialEffect, appliedSpecialEffect);
 
@@ -205,6 +219,7 @@ export function useEditor() {
       presetId: appliedPresetId,
       filter: appliedFilter,
       frame: appliedFrame,
+      framePosition: { ...appliedFramePosition },
       transform: appliedTransform,
       specialEffect: appliedSpecialEffect,
     });
@@ -212,6 +227,7 @@ export function useEditor() {
     setAppliedPresetId(presetId);
     setAppliedFilter(filter);
     setAppliedFrame(frame);
+    setAppliedFramePosition({ ...framePosition });
     setAppliedTransform({ ...transform });
     setAppliedSpecialEffect(cloneSpecialEffect(specialEffect));
 
@@ -224,6 +240,8 @@ export function useEditor() {
     appliedFrame,
     appliedTransform,
     appliedSpecialEffect,
+    appliedFramePosition,
+    framePosition,
     filter,
     frame,
     params,
@@ -315,6 +333,7 @@ export function useEditor() {
       presetId !== "none" ||
       filter !== "none" ||
       frame !== "none" ||
+      !sameFramePosition(framePosition, DEFAULT_FRAME_POSITION) ||
       !sameTransform(transform, IDENTITY_TRANSFORM) ||
       !sameSpecialEffect(specialEffect, DEFAULT_SPECIAL_EFFECT);
 
@@ -328,6 +347,7 @@ export function useEditor() {
       presetId: appliedPresetId,
       filter: appliedFilter,
       frame: appliedFrame,
+      framePosition: { ...appliedFramePosition },
       transform: appliedTransform,
       specialEffect: appliedSpecialEffect,
     });
@@ -336,11 +356,13 @@ export function useEditor() {
     setPresetId("none");
     setFilter("none");
     setFrame("none");
+    setFramePositionState({ ...DEFAULT_FRAME_POSITION });
     setTransform({ ...IDENTITY_TRANSFORM });
     setAppliedParams({ ...reset });
     setAppliedPresetId("none");
     setAppliedFilter("none");
     setAppliedFrame("none");
+    setAppliedFramePosition({ ...DEFAULT_FRAME_POSITION });
     setAppliedTransform({ ...IDENTITY_TRANSFORM });
     setAppliedSpecialEffect(cloneSpecialEffect(DEFAULT_SPECIAL_EFFECT));
     setStatus("All effects reset.");
@@ -349,9 +371,11 @@ export function useEditor() {
     appliedPresetId,
     appliedFilter,
     appliedFrame,
+    appliedFramePosition,
     appliedTransform,
     filter,
     frame,
+    framePosition,
     params,
     presetId,
     pushHistory,
@@ -367,6 +391,7 @@ export function useEditor() {
       presetId !== appliedPresetId ||
       filter !== appliedFilter ||
       frame !== appliedFrame ||
+      !sameFramePosition(framePosition, appliedFramePosition) ||
       !sameTransform(transform, appliedTransform) ||
       !sameSpecialEffect(specialEffect, appliedSpecialEffect)
     ) {
@@ -374,6 +399,7 @@ export function useEditor() {
       setPresetId(appliedPresetId);
       setFilter(appliedFilter);
       setFrame(appliedFrame);
+      setFramePositionState({ ...appliedFramePosition });
       setTransform({ ...appliedTransform });
       setSpecialEffect(cloneSpecialEffect(appliedSpecialEffect));
       setStatus("Draft changes undone.");
@@ -388,6 +414,7 @@ export function useEditor() {
       presetId: appliedPresetId,
       filter: appliedFilter,
       frame: appliedFrame,
+      framePosition: { ...appliedFramePosition },
       transform: { ...appliedTransform },
       specialEffect: cloneSpecialEffect(appliedSpecialEffect),
     });
@@ -397,17 +424,20 @@ export function useEditor() {
     setPresetId(snap.presetId);
     setFilter(snap.filter);
     setFrame(snap.frame);
+    setFramePositionState({ ...snap.framePosition });
+    setAppliedFramePosition({ ...snap.framePosition });
     setAppliedParams({ ...restored });
     setAppliedPresetId(snap.presetId);
     setAppliedFilter(snap.filter);
     setAppliedFrame(snap.frame);
+    setAppliedFramePosition({ ...snap.framePosition });
     setTransform({ ...snap.transform });
     setAppliedTransform({ ...snap.transform });
     setSpecialEffect(cloneSpecialEffect(snap.specialEffect));
     setAppliedSpecialEffect(cloneSpecialEffect(snap.specialEffect));
     setStatus("Undo.");
     setHistoryTick((t) => t + 1);
-  }, [appliedParams, appliedPresetId, appliedFilter, appliedFrame, appliedTransform, appliedSpecialEffect, filter, frame, params, presetId, specialEffect, transform]);
+  }, [appliedParams, appliedPresetId, appliedFilter, appliedFrame, appliedFramePosition, appliedTransform, appliedSpecialEffect, filter, frame, framePosition, params, presetId, specialEffect, transform]);
 
   const redo = useCallback(() => {
     // If the user is sitting on a draft, redo first has no committed meaning.
@@ -416,6 +446,7 @@ export function useEditor() {
       presetId !== appliedPresetId ||
       filter !== appliedFilter ||
       frame !== appliedFrame ||
+      !sameFramePosition(framePosition, appliedFramePosition) ||
       !sameTransform(transform, appliedTransform) ||
       !sameSpecialEffect(specialEffect, appliedSpecialEffect)
     ) {
@@ -431,6 +462,7 @@ export function useEditor() {
       presetId: appliedPresetId,
       filter: appliedFilter,
       frame: appliedFrame,
+      framePosition: { ...appliedFramePosition },
       transform: { ...appliedTransform },
       specialEffect: cloneSpecialEffect(appliedSpecialEffect),
     });
@@ -440,17 +472,20 @@ export function useEditor() {
     setPresetId(snap.presetId);
     setFilter(snap.filter);
     setFrame(snap.frame);
+    setFramePositionState({ ...snap.framePosition });
+    setAppliedFramePosition({ ...snap.framePosition });
     setAppliedParams({ ...restored });
     setAppliedPresetId(snap.presetId);
     setAppliedFilter(snap.filter);
     setAppliedFrame(snap.frame);
+    setAppliedFramePosition({ ...snap.framePosition });
     setTransform({ ...snap.transform });
     setAppliedTransform({ ...snap.transform });
     setSpecialEffect(cloneSpecialEffect(snap.specialEffect));
     setAppliedSpecialEffect(cloneSpecialEffect(snap.specialEffect));
     setStatus("Redo.");
     setHistoryTick((t) => t + 1);
-  }, [appliedParams, appliedPresetId, appliedFilter, appliedFrame, appliedTransform, appliedSpecialEffect, params, presetId, filter, frame, specialEffect, transform]);
+  }, [appliedParams, appliedPresetId, appliedFilter, appliedFrame, appliedFramePosition, appliedTransform, appliedSpecialEffect, params, presetId, filter, frame, framePosition, specialEffect, transform]);
 
   const hasUnappliedChanges =
     !paramsEqual(params, appliedParams) ||
@@ -466,6 +501,7 @@ export function useEditor() {
     presetId,
     filter,
     frame,
+    framePosition,
     transform,
     specialEffect,
     status,
@@ -476,6 +512,7 @@ export function useEditor() {
       presetId !== appliedPresetId ||
       filter !== appliedFilter ||
       frame !== appliedFrame ||
+      !sameFramePosition(framePosition, appliedFramePosition) ||
       !sameTransform(transform, appliedTransform) ||
       !sameSpecialEffect(specialEffect, appliedSpecialEffect),
     canRedo: future.current.length > 0,
@@ -488,6 +525,7 @@ export function useEditor() {
     applyPreset,
     applySavedLook,
     chooseFrame,
+    setFramePosition,
     applyChanges,
     toggleMirror,
     toggleFlipVertical,
