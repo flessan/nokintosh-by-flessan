@@ -22,7 +22,6 @@ The preset library currently contains **28 looks**:
 - **JPEG**
 - **CCD**
 - **Filters:** B&W, Sepia, Negative, Warm, Cool, High Contrast, Cross Process,
-  Chrome, Soft Flash, Cross Process,
   Chrome, Soft Flash
 - **Camera 2:** Nokia, 1/4", iPhone3gs
 - **Compact-camera profiles:** Sony Cyber-shot, Canon PowerShot, Canon Digital IXUS,
