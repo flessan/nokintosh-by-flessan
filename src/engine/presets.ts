@@ -2,6 +2,7 @@ import {
   DEFAULT_PARAMS,
   type EffectParams,
   type FilterMode,
+  type FrameMode,
   type Preset,
 } from "./types";
 
@@ -20,7 +21,7 @@ function preset(
   note: string,
   params: Partial<EffectParams>,
   filter: FilterMode = "none",
-  frame: "none" | "collage" = "none",
+  frame: FrameMode = "none",
 ): Preset {
   return {
     id,
@@ -52,8 +53,8 @@ export const PRESETS: Preset[] = [
   ),
   preset(
     "bw",
-    "B&W",
-    "Monochrome digital conversion with a little extra tonal separation.",
+    "Mono",
+    "A carefully mixed black-and-white conversion with shaped midtones and clean highlights.",
     {
       grain: 0.08,
       jpeg: 0.08,
@@ -64,8 +65,8 @@ export const PRESETS: Preset[] = [
   ),
   preset(
     "sepia",
-    "Sepia",
-    "Warm brown monochrome conversion with restrained digital texture.",
+    "Sepia Print",
+    "Warm paper-like browns, gentle highlight cream and a clean digital black point.",
     {
       grain: 0.08,
       jpeg: 0.08,
@@ -77,7 +78,7 @@ export const PRESETS: Preset[] = [
   preset(
     "negative",
     "Negative",
-    "Digital negative/inverted colour treatment.",
+    "A true channel inversion with a slightly uneven compact-camera response.",
     {
       grain: 0.04,
       jpeg: 0.06,
@@ -86,31 +87,52 @@ export const PRESETS: Preset[] = [
   ),
   preset(
     "warm-filter",
-    "Warm",
-    "Simple warm colour filter without film grain or fake vintage toning.",
+    "Golden",
+    "Golden highlights and warmer skin tones without burying the original detail.",
     { contrast: 0.08, saturation: 0.05 },
     "warm",
   ),
   preset(
     "cool-filter",
-    "Cool",
-    "Simple cool colour filter with a clean digital balance.",
+    "Blue Hour",
+    "Cool blue shadows and a crisp daylight balance with protected highlights.",
     { contrast: 0.06, saturation: 0.04 },
     "cool",
   ),
   preset(
     "high-contrast",
-    "High Contrast",
-    "Punchy digital contrast with clipped highlights and deeper blacks.",
-    { contrast: 0.08, saturation: 0.08, sharpen: 0.2 },
+    "Hard Contrast",
+    "A punchy S-curve with deeper blacks, crisp edges and bright compact-camera highlights.",
+    { contrast: 0.22, saturation: 0.06, sharpen: 0.28, jpeg: 0.08 },
     "high-contrast",
+  ),
+  preset(
+    "cross-process",
+    "Cross Color",
+    "Cyan-leaning shadows and amber highlights for an unruly early-digital colour split.",
+    { contrast: 0.2, saturation: 0.16, colorShift: 0.22, fade: 0.05 },
+    "cross-process",
+  ),
+  preset(
+    "chrome",
+    "CCD Chrome",
+    "Dense blue skies, lively greens and a clear, sharpened CCD-style colour response.",
+    { contrast: 0.28, saturation: 0.28, sharpen: 0.62, jpeg: 0.12, colorShift: 0.18 },
+    "chrome",
+  ),
+  preset(
+    "soft-flash",
+    "Soft Flash",
+    "A close-flash look with lifted faces, rounded highlights and a soft warm cast.",
+    { exposure: 0.12, flash: 0.34, bloom: 0.32, softness: 0.06, contrast: 0.08, temperature: 0.12 },
+    "soft-flash",
   ),
 
   // Non-filter reference looks.
   preset(
     "collage",
     "Collage",
-    "Single-photo collage frame: clean paper border and printed-card presentation.",
+    "Legacy paper-frame preset; choose it from the Frames panel for new edits.",
     {},
     "none",
     "collage",
@@ -455,6 +477,26 @@ export const PRESETS: Preset[] = [
 export const PRESET_MAP: Record<string, Preset> = Object.fromEntries(
   PRESETS.map((p) => [p.id, p]),
 );
+
+const FILTER_PRESET_IDS = new Set([
+  "bw",
+  "sepia",
+  "negative",
+  "warm-filter",
+  "cool-filter",
+  "high-contrast",
+  "cross-process",
+  "chrome",
+  "soft-flash",
+]);
+const PHONE_PRESET_IDS = new Set(["nokia", "quarter-inch", "iphone-3gs"]);
+
+export const FILTER_PRESETS = PRESETS.filter((item) => FILTER_PRESET_IDS.has(item.id));
+export const CAMERA_PRESETS = PRESETS.filter(
+  (item) => item.id !== "none" && item.id !== "collage" && !FILTER_PRESET_IDS.has(item.id),
+);
+export const PHONE_PRESETS = CAMERA_PRESETS.filter((item) => PHONE_PRESET_IDS.has(item.id));
+export const COMPACT_CAMERA_PRESETS = CAMERA_PRESETS.filter((item) => !PHONE_PRESET_IDS.has(item.id));
 
 export function paramsEqual(a: EffectParams, b: EffectParams): boolean {
   return (Object.keys(a) as (keyof EffectParams)[]).every(

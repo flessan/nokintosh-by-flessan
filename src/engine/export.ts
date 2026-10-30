@@ -1,6 +1,6 @@
 import { createRenderer, fitWithin, type ImageSource } from "./renderer";
-import { DEFAULT_SPECIAL_EFFECT, type EffectParams, type FilterMode } from "./types";
-import { applyFrame } from "./frame";
+import { DEFAULT_SPECIAL_EFFECT, type EffectParams, type FilterMode, type FrameMode, type FramePosition } from "./types";
+import { applyFrame, DEFAULT_FRAME_POSITION, preloadFrameAsset } from "./frame";
 import { applyCanvasTransform, IDENTITY_TRANSFORM, type ImageTransform } from "./transform";
 import { applySpecialEffect } from "./specialEffect";
 import type { SpecialEffectState } from "./types";
@@ -77,9 +77,11 @@ export async function exportImage(
   options: ExportOptions,
   filter: FilterMode = "none",
   transform: ImageTransform = IDENTITY_TRANSFORM,
-  frame: "none" | "collage" = "none",
+  frame: FrameMode = "none",
   specialEffect: SpecialEffectState = DEFAULT_SPECIAL_EFFECT,
+  framePosition: FramePosition = DEFAULT_FRAME_POSITION,
 ): Promise<ExportResult> {
+  await preloadFrameAsset(frame).catch(() => undefined);
   const canvas = document.createElement("canvas");
   const renderer = createRenderer(canvas);
   // phones and tablets cannot hold two full resolution RGBA buffers
@@ -93,7 +95,7 @@ export async function exportImage(
     renderer.render(params, filter);
     applyCanvasTransform(canvas, transform);
     applySpecialEffect(canvas, specialEffect);
-    applyFrame(canvas, frame);
+    applyFrame(canvas, frame, framePosition);
 
     let format = options.format;
     let fellBack = false;

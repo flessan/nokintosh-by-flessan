@@ -11,11 +11,16 @@ import { PRESETS, PRESET_MAP } from "./engine/presets";
 import { SPECIAL_EFFECT_LABELS } from "./engine/specialEffect";
 import { useEditor } from "./state/useEditor";
 import { usePreview } from "./state/usePreview";
+import { useSavedLooks } from "./state/useSavedLooks";
 import { EffectsPanel } from "./ui/EffectsPanel";
 import { ExportDialog } from "./ui/ExportDialog";
 import { CameraMark, GithubIcon } from "./ui/icons";
 import { MenuBar, type Menu } from "./ui/MenuBar";
 import { PresetList } from "./ui/PresetList";
+import { FilterPicker } from "./ui/FilterPicker";
+import { FramePicker } from "./ui/FramePicker";
+import { FRAME_OPTIONS } from "./engine/frame";
+import { SavedLooksPanel } from "./ui/SavedLooksPanel";
 import { PreviewStage } from "./ui/PreviewStage";
 import { StatusBar } from "./ui/StatusBar";
 import { Button, GroupBox } from "./ui/widgets";
@@ -24,12 +29,13 @@ const REPO_URL = "https://github.com/flessan/nokintosh-by-flessan";
 
 export default function App() {
   const editor = useEditor();
+  const { looks, saveLook, deleteLook, importLooks } = useSavedLooks();
   const [showOriginal, setShowOriginal] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragOver, setDragOver] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
-  const [tab, setTab] = useState<"presets" | "effects">("presets");
+  const [tab, setTab] = useState<"looks" | "filters" | "frames" | "effects">("looks");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportOpts, setExportOpts] = useState<ExportOptions>({
@@ -40,7 +46,7 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement | null>(null);
   const dragDepth = useRef(0);
 
-  const { photo, params, presetId, filter, frame, transform, specialEffect } = editor;
+  const { photo, params, presetId, filter, frame, framePosition, transform, specialEffect } = editor;
   const cacheCustom = !editor.hasUnappliedChanges;
   const { canvasRef, stageRef, info } = usePreview(
     photo,
@@ -48,6 +54,7 @@ export default function App() {
     presetId,
     filter,
     frame,
+    framePosition,
     transform,
     specialEffect,
     showOriginal,
@@ -56,6 +63,19 @@ export default function App() {
 
   // ---------- file input ----------
   const pickFile = useCallback(() => fileInput.current?.click(), []);
+
+  const saveCurrentLook = useCallback((name: string) => {
+    const saved = saveLook({
+      name,
+      params: editor.params,
+      filter: editor.filter,
+      frame: editor.frame,
+      framePosition: editor.framePosition,
+      transform: editor.transform,
+      specialEffect: editor.specialEffect,
+    });
+    editor.setStatus("Saved look: " + saved.name);
+  }, [editor, saveLook]);
 
   // ---------- drag & drop ----------
   useEffect(() => {
@@ -131,6 +151,7 @@ export default function App() {
           transform,
           frame,
           specialEffect,
+          framePosition,
         );
         const presetName = PRESET_MAP[presetId]?.name ?? "custom";
         const name = buildFilename(photo.name, presetName, result.format);
@@ -146,7 +167,7 @@ export default function App() {
         setExporting(false);
       }
     },
-    [editor, exporting, filter, frame, params, photo, presetId, specialEffect, transform],
+    [editor, exporting, filter, frame, framePosition, params, photo, presetId, specialEffect, transform],
   );
 
   const quickExport = useCallback(() => {
@@ -272,14 +293,25 @@ export default function App() {
             action: () => setShowOriginal((v) => !v),
             separatorAfter: true,
           },
-          { label: "Presets Panel", checked: tab === "presets", action: () => setTab("presets") },
+          { label: "Looks Panel", checked: tab === "looks", action: () => setTab("looks") },
+          { label: "Filters Panel", checked: tab === "filters", action: () => setTab("filters") },
+          { label: "Frames Panel", checked: tab === "frames", action: () => setTab("frames") },
           { label: "Effects Panel", checked: tab === "effects", action: () => setTab("effects") },
         ],
       },
       {
+        label: "Frames",
+        items: FRAME_OPTIONS.map((option) => ({
+          label: option.name,
+          checked: frame === option.id,
+          disabled: !photo,
+          action: () => editor.chooseFrame(option.id),
+        })),
+      },
+      {
         label: "Presets",
         items: [
-          ...PRESETS.map((p) => ({
+          ...PRESETS.filter((p) => p.id !== "collage").map((p) => ({
             label: p.name,
             checked: p.id === presetId,
             action: () => editor.applyPreset(p.id),
@@ -319,7 +351,7 @@ export default function App() {
         ],
       },
     ],
-    [editor, photo, presetId, pickFile, quickExport, showOriginal, specialEffect.kind, specialEffect.mode, tab],
+    [editor, photo, presetId, pickFile, quickExport, showOriginal, specialEffect.kind, specialEffect.mode, tab, frame],
   );
 
   const detail = photo
@@ -347,14 +379,46 @@ export default function App() {
         ? `CPU  ${info.previewWidth}x${info.previewHeight}`
         : "idle";
 
-  const presetsPanel = (
-    <GroupBox label="Presets">
-      <PresetList
+  const looksPanel = (
+    <>
+      <SavedLooksPanel
+        looks={looks}
+        canSave={!!photo && looks.length < 24}
+        onSave={saveCurrentLook}
+        onApply={editor.applySavedLook}
+        onDelete={deleteLook}
+        onImport={importLooks}
+      />
+      <GroupBox label="Camera looks">
+        <PresetList
+          presetId={presetId}
+          photo={photo}
+          onPick={editor.applyPreset}
+          onHint={setHint}
+        />
+      </GroupBox>
+    </>
+  );
+
+  const filtersPanel = (
+    <GroupBox label="Quick filters">
+      <FilterPicker
         presetId={presetId}
-        specialEffect={specialEffect}
+        photo={photo}
         onPick={editor.applyPreset}
-        onChooseSpecialEffect={editor.chooseSpecialEffect}
         onHint={setHint}
+      />
+    </GroupBox>
+  );
+
+  const framesPanel = (
+    <GroupBox label="Photo frames">
+      <FramePicker
+        value={frame}
+        photo={photo}
+        position={framePosition}
+        onPick={editor.chooseFrame}
+        onChangePosition={editor.setFramePosition}
       />
     </GroupBox>
   );
@@ -375,6 +439,7 @@ export default function App() {
         onSetSpecialEffectBrushSize={editor.setSpecialEffectBrushSize}
         onClearSpecialEffectMask={editor.clearSpecialEffectMask}
         onDisableSpecialEffect={editor.disableSpecialEffect}
+        disabled={!photo}
       />
       <div className="mt-2 flex gap-2 px-[5px] pb-1">
         <Button className="flex-1" onClick={editor.resetAll}>
@@ -404,9 +469,11 @@ export default function App() {
           <span className="mr-2 flex items-center">
             <CameraMark />
           </span>
-          <h1 className="min-w-0 flex-1 truncate text-[12px] font-bold">
-            Nokintosh // Digicam Utility
-            {photo ? ` // ${photo.name}` : ""}
+          <h1 className="brand-heading min-w-0 flex-1 truncate">
+            <span className="brand-wordmark">NOKINTOSH</span>
+            <span className="brand-divider">/</span>
+            <span className="brand-subtitle">DIGICAM UTILITY</span>
+            {photo && <span className="brand-file">{photo.name}</span>}
           </h1>
           <a
             href={REPO_URL}
@@ -428,16 +495,18 @@ export default function App() {
 
         {/* ---- toolbar ---- */}
         <div className="flex shrink-0 flex-wrap items-center gap-[3px] bg-[color:var(--face)] px-[3px] py-[3px]">
-          <Button onClick={pickFile}>Open...</Button>
+          <Button variant="default" onClick={pickFile}>Open Photo</Button>
           <Button onClick={() => void editor.openSample()}>Sample</Button>
           <span className="mx-1 h-[20px] w-[2px] bevel-thin-in" />
-          <Button onClick={editor.undo} disabled={!editor.canUndo}>
-            Undo
+          <Button onClick={editor.undo} disabled={!editor.canUndo}>Undo</Button>
+          <Button onClick={editor.redo} disabled={!editor.canRedo}>Redo</Button>
+          <Button
+            onClick={editor.applyChanges}
+            disabled={!photo || !editor.hasUnappliedChanges}
+          >
+            Apply
           </Button>
-          <Button onClick={editor.redo} disabled={!editor.canRedo}>
-            Redo
-          </Button>
-          <Button onClick={editor.resetAll}>Reset</Button>
+          <Button onClick={editor.resetAll} disabled={!photo}>Reset</Button>
           <span className="mx-1 hidden h-[20px] w-[2px] bevel-thin-in sm:block" />
           <Button
             className="hidden sm:inline-flex"
@@ -457,9 +526,23 @@ export default function App() {
         {/* ---- workspace ---- */}
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           {/* presets: desktop left */}
-          <aside className="order-1 hidden w-[244px] shrink-0 flex-col overflow-hidden bg-[color:var(--face)] lg:flex">
-            <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
-              {presetsPanel}
+          <aside className="order-1 hidden w-[264px] shrink-0 flex-col overflow-hidden bg-[color:var(--face)] lg:flex">
+            <div className="editor-panel-tabs grid grid-cols-3 gap-[2px] bg-[color:var(--face)] p-[3px]">
+              {(["looks", "filters", "frames"] as const).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className="ui-btn min-h-[26px] capitalize"
+                  data-pressed={tab === item}
+                  aria-pressed={tab === item}
+                  onClick={() => setTab(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+            <div className="scroll-thin min-h-0 flex-1 overflow-y-auto border-t border-[color:var(--shadow)]">
+              {tab === "frames" ? framesPanel : tab === "filters" ? filtersPanel : looksPanel}
             </div>
           </aside>
 
@@ -474,6 +557,9 @@ export default function App() {
               loading={editor.loading}
               rendering={info.phase === "loading"}
               presetName={previewName}
+              frame={frame}
+              framePosition={framePosition}
+              onFramePositionChange={editor.setFramePosition}
               zoom={zoom}
               pan={pan}
               mirror={transform.mirror}
@@ -491,7 +577,7 @@ export default function App() {
           </main>
 
           {/* effects: desktop right */}
-          <aside className="order-3 hidden w-[244px] shrink-0 flex-col overflow-hidden bg-[color:var(--face)] lg:flex">
+          <aside className="order-3 hidden w-[264px] shrink-0 flex-col overflow-hidden bg-[color:var(--face)] lg:flex">
             <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
               {effectsPanel}
             </div>
@@ -499,8 +585,8 @@ export default function App() {
 
           {/* side panel: mobile / tablet */}
           <section className="order-4 flex shrink-0 flex-col bg-[color:var(--face)] lg:hidden">
-            <div className="flex gap-[2px] px-[3px] pt-[3px]">
-              {(["presets", "effects"] as const).map((t) => (
+            <div className="editor-panel-tabs grid grid-cols-4 gap-[2px] px-[3px] pt-[3px]">
+              {(["looks", "filters", "frames", "effects"] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -516,8 +602,8 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <div className="scroll-thin max-h-[40vh] overflow-y-auto">
-              {tab === "presets" ? presetsPanel : effectsPanel}
+            <div className="scroll-thin max-h-[42vh] overflow-y-auto">
+              {tab === "looks" ? looksPanel : tab === "filters" ? filtersPanel : tab === "frames" ? framesPanel : effectsPanel}
             </div>
           </section>
         </div>
@@ -557,6 +643,7 @@ export default function App() {
         onClose={() => setDialogOpen(false)}
         onExport={(o) => void runExport(o)}
       />
+
     </div>
   );
 }

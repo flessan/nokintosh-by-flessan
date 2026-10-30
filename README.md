@@ -16,21 +16,38 @@ configured public Telegraph Cloud file URL.
 
 ### Digicam looks
 
-The preset library currently contains **26 looks**:
+The preset library currently contains **28 looks**:
 
 - **Original**
 - **JPEG**
 - **CCD**
-- **Filters:** B&W, Sepia, Negative, Warm, Cool, High Contrast
-- **Camera 2:** Nokia, 1/4", iPhone3gs
+- **Filters:** Mono, Sepia Print, Negative, Golden, Blue Hour, Hard Contrast,
+  Cross Color, CCD Chrome, Soft Flash
+- **Phones:** Nokia, 1/4", iPhone3gs
 - **Compact-camera profiles:** Sony Cyber-shot, Canon PowerShot, Canon Digital IXUS,
   Nikon COOLPIX, Fujifilm FinePix, Casio Exilim, Olympus CAMEDIA, Panasonic Lumix,
   Kodak EasyShare, Pentax Optio, Samsung Digimax, Early Camera Phone,
   Night Flash Compact
-- **Collage** — a presentation/frame effect rather than a camera look
 
 The named camera profiles are character presets, not claims of exact hardware
 color-science replication.
+
+### Photo frames
+
+The Frames panel applies a border to the photo itself. Available styles include
+Windows 98, Instant Print, 35mm Negative, Contact Sheet, Camera LCD, Paper
+Collage, Date Print, MiniDV and Gallery Mat. Each frame is rendered into the
+photo itself, appears in the live preview, and travels with the export. Drag
+the photo in the preview to reposition its crop, or use the frame scale control.
+The crop stays clipped to the selected frame and is saved with the look.
+
+### My Camera Looks
+
+Save your own effect combinations with a name and reuse them later. Saved looks
+include the complete camera settings, filter, selected photo frame, image transforms,
+and Blur / Pixelate configuration. They are stored locally in the current
+browser (up to 24 looks) and never uploaded. Use **Import** and **Export**
+to move or back up a collection as a JSON file.
 
 ### Core controls
 
@@ -161,8 +178,13 @@ src/
   state/
     useEditor.ts          document state, Apply, Undo/Redo
     usePreview.ts         renderer lifecycle, preview sizing, cache
+    useSavedLooks.ts      browser-local saved look library + JSON import
   ui/
-    App-facing Windows-style controls and panels
+    App.tsx               main editor workspace
+    FramePicker.tsx       visual frame selection
+    PresetList.tsx        searchable camera-look library
+    SavedLooksPanel.tsx   save, load, import and export camera looks
+    Other files           preview, menus, effects and export panels
 ```
 
 The engine layer does not import React UI code.
@@ -220,9 +242,21 @@ requests, so the browser can apply the normal CORS rules directly.
 
 ## Design direction
 
-The interface intentionally follows a compact Windows 2000 / early-XP utility
-language: grey surfaces, hard borders, beveled controls, a classic title bar,
-small practical menus, and restrained blue selection states.
+The interface uses a compact Windows 2000 utility language: a blue title bar,
+grey panels, hard borders, beveled controls, and restrained blue selection
+states. The supplied Windows reference is recreated as a **photo frame effect**,
+not as extra chrome around the editor window.
+
+Typography has three practical roles: Trebuchet-style display text for names
+and section headings, Tahoma-style UI text for controls, and Lucida Console /
+Consolas for camera readouts and numeric values. The app uses local system-font
+fallbacks rather than loading external font files.
+
+The first screen stays focused on the photo itself: open, drop, or paste an image,
+then explore camera looks, dedicated colour filters, photo frames, and manual
+adjustments directly in the workspace. The Looks, Filters and Frames galleries
+use the same opened photo for their visual previews. There is no blocking
+onboarding walkthrough.
 
 It avoids gradients, glassmorphism, neon glow, cyberpunk styling, and generic
 SaaS dashboard patterns.

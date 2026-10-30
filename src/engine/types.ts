@@ -47,9 +47,30 @@ export type FilterMode =
   | "negative"
   | "warm"
   | "cool"
-  | "high-contrast";
+  | "high-contrast"
+  | "cross-process"
+  | "chrome"
+  | "soft-flash";
 
-export type FrameMode = "none" | "collage";
+export interface FramePosition {
+  /** Photo scale inside the frame aperture. 1 means cover-to-fit. */
+  zoom: number;
+  /** Normalized pan across the available crop area, clamped to -1..1. */
+  x: number;
+  y: number;
+}
+
+export type FrameMode =
+  | "none"
+  | "collage"
+  | "windows-98"
+  | "polaroid"
+  | "film-strip"
+  | "contact-sheet"
+  | "lcd-playback"
+  | "date-stamp"
+  | "mini-dv"
+  | "gallery-mat";
 
 export type SpecialEffectKind = "none" | "gaussian-blur" | "pixelate";
 export type SpecialEffectMode = "uniform" | "vignette" | "draw";

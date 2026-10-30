@@ -57,12 +57,15 @@ source
   -> named filter
   -> mirror / flip
   -> Gaussian Blur or Pixelate
-  -> Collage frame
+  -> selected photo frame (Windows 98 / Instant Print / 35mm Negative / Contact Sheet / Camera LCD / Paper Collage / Date Print / MiniDV / Gallery Mat)
   -> output canvas
 ```
 
-The preview uses a capped working size. Export reruns the pipeline at the
-selected output size.
+Named filters use separate monochrome, sepia, negative, warm/cool, contrast,
+cross-colour, CCD chrome and soft-flash tone treatments. The Filters gallery
+shows photo-based proof thumbnails; those browser display approximations are
+not used for export. The preview uses a capped working size. Export reruns the
+actual Canvas2D pipeline at the selected output size.
 
 ## Design rule
 

@@ -29,7 +29,7 @@ export function GroupBox({
 }) {
   return (
     <section className={cn("px-2 pt-2 pb-2", className)}>
-      <h2 className="mb-1 px-[2px] text-[11px] font-bold tracking-wide text-[color:var(--ink)] uppercase">
+      <h2 className="panel-heading mb-1 px-[2px]">
         {label}
       </h2>
       <div className={cn("bevel-thin-in bg-[color:var(--face)] p-[3px]", bodyClassName)}>

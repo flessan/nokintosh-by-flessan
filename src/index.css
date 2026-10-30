@@ -183,6 +183,11 @@ textarea {
   color: #ffffff !important;
 }
 
+.ui-tab[data-pressed="true"] {
+  background: var(--sel);
+  color: #ffffff;
+}
+
 /* ---------- range sliders (classic trackbar) ---------- */
 input[type="range"].ui-range {
   -webkit-appearance: none;
@@ -329,4 +334,392 @@ input[type="range"].ui-range::-moz-range-thumb {
 .preview-canvas {
   position: relative;
   z-index: 1;
+}
+
+
+
+
+/* ---------- photo-look browser ---------- */
+.look-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 78px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  overflow: hidden;
+  padding: 5px;
+  background: #e9e7df;
+  text-align: left;
+  cursor: default;
+}
+.look-card:hover,
+.look-card:focus-visible {
+  outline: 1px dotted var(--ink);
+  outline-offset: -3px;
+}
+.look-card[data-selected="true"] {
+  background: #d9e1f2;
+  box-shadow: inset 0 0 0 1px var(--sel), inset 0 0 0 2px #ffffff;
+}
+.look-card-mark {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #a8b5bd;
+  color: #ffffff;
+  font-family: Tahoma, Verdana, sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+.look-card-mark-original { background: #8c9a91; }
+.look-card-mark-bw { background: #606060; }
+.look-card-mark-sepia { background: #98744d; }
+.look-card-mark-negative { background: #5d6f83; }
+.look-card-mark-warm-filter { background: #bc8656; }
+.look-card-mark-cool-filter { background: #6c90a6; }
+.look-card-mark-high-contrast { background: #363636; }
+.look-card-mark-cross-process { background: #668b83; }
+.look-card-mark-chrome { background: #497e9e; }
+.look-card-mark-soft-flash { background: #d0a77d; color: #473526; }
+.look-card-mark-ccd { background: #557f85; }
+.look-card-mark-jpeg { background: #8c999c; }
+.look-card-mark-nokia,
+.look-card-mark-quarter-inch,
+.look-card-mark-iphone-3gs,
+.look-card-mark-early-camera-phone { background: #71816a; }
+.look-card-mark-night-flash-compact { background: #30323a; }
+.look-card-name {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.look-card-note {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-dim);
+  font-size: 9px;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.look-card-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  width: 15px;
+  height: 15px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ffffff;
+  background: var(--sel);
+  color: #ffffff;
+}
+
+/* ---------- film / photo frame picker ---------- */
+.frame-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 5px;
+  background: #e9e7df;
+  text-align: left;
+  cursor: default;
+}
+.frame-card[data-selected="true"] {
+  background: #d9e1f2;
+  box-shadow: inset 0 0 0 1px var(--sel), inset 0 0 0 2px #ffffff;
+}
+.frame-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.frame-card:not(:disabled):hover,
+.frame-card:focus-visible {
+  outline: 1px dotted var(--ink);
+  outline-offset: -3px;
+}
+.frame-card-label { font-size: 10px; font-weight: 700; }
+.frame-card-note { min-height: 28px; color: var(--ink-dim); font-size: 9px; line-height: 1.25; }
+.first-photo-card { max-width: 460px; }
+.first-photo-icon {
+  position: relative;
+  width: 50px;
+  height: 42px;
+  margin: 0 auto 12px;
+  border: 2px solid #666666;
+  background: #e4e4e4;
+  box-shadow: inset 2px 2px 0 #ffffff, inset -2px -2px 0 #999999;
+}
+.first-photo-icon::before {
+  position: absolute;
+  top: 7px;
+  left: 8px;
+  width: 30px;
+  height: 23px;
+  border: 2px solid #526d7c;
+  background: #8ca9a7;
+  content: "";
+}
+.first-photo-icon::after {
+  position: absolute;
+  top: 12px;
+  right: 13px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid #f7f7f7;
+  border-radius: 50%;
+  background: #e8e4cd;
+  content: "";
+}
+
+
+/* ---------- Nokintosh type system ---------- */
+:root {
+  --font-ui: Tahoma, "Segoe UI", Verdana, sans-serif;
+  --font-display: "Trebuchet MS", "Arial", sans-serif;
+  --font-data: "Lucida Console", Consolas, "Courier New", monospace;
+  --font-caption: Georgia, "Times New Roman", serif;
+}
+body { font-family: var(--font-ui); font-size: 13px; }
+button, input, select, textarea { font-family: var(--font-ui); }
+.ui-btn { font-size: 11px; font-weight: 600; }
+.title-bar { height: 29px; padding: 0 6px; }
+.brand-heading {
+  display: flex; min-width: 0; align-items: baseline; gap: 8px;
+  color: #ffffff; line-height: 1; white-space: nowrap;
+}
+.brand-wordmark {
+  font-family: var(--font-display); font-size: 15px; font-weight: 900;
+  letter-spacing: 0.055em;
+}
+.brand-divider { color: #a9bddc; font-family: var(--font-data); font-size: 11px; }
+.brand-subtitle {
+  color: #d9e3f4; font-family: var(--font-data); font-size: 9px;
+  font-weight: 700; letter-spacing: 0.075em;
+}
+.brand-file {
+  min-width: 0; overflow: hidden; color: #c6d4ec; font-family: var(--font-ui);
+  font-size: 10px; font-weight: 400; text-overflow: ellipsis;
+}
+.panel-heading {
+  color: #202020; font-family: var(--font-display); font-size: 12px;
+  font-weight: 800; letter-spacing: 0.035em; line-height: 1.25;
+}
+.section-kicker, .gallery-kicker {
+  display: block; color: #66645e; font-family: var(--font-data);
+  font-size: 9px; font-weight: 700; letter-spacing: 0.09em; line-height: 1.45;
+}
+.effect-control-label,
+label[for^="ctl-"],
+label[for="special-strength"],
+label[for="special-brush"] {
+  color: #222222; font-family: var(--font-display); font-size: 12px; font-weight: 700;
+}
+output[for^="ctl-"],
+output[for="special-strength"],
+output[for="special-brush"] { font-family: var(--font-data); font-size: 10px; }
+
+/* ---------- gallery controls ---------- */
+.gallery-search {
+  min-height: 29px; padding-top: 5px; padding-bottom: 5px; color: #171717;
+  font-family: var(--font-ui); font-size: 11px; outline: none;
+}
+.gallery-search::placeholder { color: #77746e; }
+.gallery-search:focus-visible { outline: 1px solid var(--sel); outline-offset: 1px; }
+.look-gallery-intro, .frame-gallery-intro { padding-top: 1px; padding-bottom: 2px; }
+.look-gallery-intro p, .frame-gallery-intro p {
+  margin-top: 2px; color: #484741; font-size: 10px; line-height: 1.4;
+}
+.gallery-filter-tabs {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px; padding: 0 5px;
+}
+.gallery-filter-tab {
+  min-width: 0; min-height: 25px; padding: 3px 4px; border: 1px solid #aaa69e;
+  background: #d4d0c8; color: #3c3a35; font-family: var(--font-display);
+  font-size: 10px; font-weight: 700; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gallery-filter-tab[data-active="true"] {
+  border-color: #0a246a; background: #0a246a; color: #ffffff;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,0.24);
+}
+.gallery-filter-tab:focus-visible, .gallery-filter-tab:hover {
+  outline: 1px dotted #000000; outline-offset: -3px;
+}
+.look-gallery-grid, .frame-gallery-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px; padding: 0 5px;
+}
+.look-card {
+  position: relative; display: flex; min-width: 0; flex-direction: column;
+  overflow: hidden; gap: 0; padding: 4px; border: 1px solid #aaa69e;
+  background: #e8e5dd; color: #1b1b1b; text-align: left; cursor: default;
+  transition: background-color 100ms ease, border-color 100ms ease;
+}
+.look-card:hover, .look-card:focus-visible {
+  border-color: #5d6e91; outline: 1px dotted #1a1a1a; outline-offset: -3px;
+}
+.look-card[data-selected="true"] {
+  border-color: #0a246a; background: #dce4f0;
+  box-shadow: inset 0 0 0 1px #ffffff, inset 0 0 0 2px #7285a9;
+}
+.look-card-image {
+  position: relative; display: block; height: 72px; overflow: hidden;
+  border: 1px solid #77756e; background: #aeb9b2;
+}
+.look-card-preview { display: block; width: 100%; height: 72px; object-fit: cover; }
+.look-card-tag {
+  position: absolute; left: 4px; bottom: 4px; max-width: calc(100% - 8px);
+  overflow: hidden; padding: 2px 4px; background: rgba(18,24,26,0.78);
+  color: #ffffff; font-family: var(--font-data); font-size: 7px;
+  font-weight: 700; letter-spacing: 0.06em; text-overflow: ellipsis; white-space: nowrap;
+}
+.look-card-copy { display: flex; min-width: 0; flex-direction: column; gap: 2px; padding: 5px 2px 2px; }
+.look-card-name {
+  overflow: hidden; color: #191919; font-family: var(--font-display);
+  font-size: 12px; font-weight: 800; line-height: 1.2;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.look-card-note {
+  display: -webkit-box; min-height: 25px; overflow: hidden; color: #58564f;
+  font-family: var(--font-ui); font-size: 9px; line-height: 1.35;
+  -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}
+.look-card-check {
+  position: absolute; top: 7px; right: 7px; display: flex; width: 17px; height: 17px;
+  align-items: center; justify-content: center; border: 1px solid #ffffff;
+  background: #0a246a; color: #ffffff;
+}
+.gallery-selection {
+  display: flex; flex-direction: column; gap: 2px; padding: 7px 8px;
+  border: 1px solid #aaa69e; background: #f0eee8; color: #24231f;
+}
+.gallery-selection strong { font-family: var(--font-display); font-size: 12px; font-weight: 800; }
+.gallery-selection p { color: #55534d; font-size: 10px; line-height: 1.35; }
+.gallery-empty {
+  padding: 14px 8px; border: 1px inset #aaa69e; background: #f4f2ed;
+  color: #66635d; font-size: 10px; text-align: center;
+}
+.gallery-filter-tabs + .look-gallery-grid { margin-top: 1px; }
+
+/* Each proof tile uses the opened photo, so filter comparisons are immediate. */
+.look-preview-bw { filter: grayscale(1) contrast(1.16); }
+.look-preview-sepia { filter: sepia(0.9) saturate(0.82) contrast(1.04); }
+.look-preview-negative { filter: invert(1) hue-rotate(8deg); }
+.look-preview-warm-filter { filter: sepia(0.22) saturate(1.16) hue-rotate(-7deg); }
+.look-preview-cool-filter { filter: saturate(0.94) hue-rotate(12deg) contrast(1.04); }
+.look-preview-high-contrast { filter: contrast(1.38) saturate(1.04); }
+.look-preview-cross-process { filter: sepia(0.2) hue-rotate(145deg) saturate(1.22) contrast(1.12); }
+.look-preview-chrome { filter: saturate(1.48) contrast(1.16); }
+.look-preview-soft-flash { filter: brightness(1.12) saturate(0.94) contrast(0.94); }
+.look-preview-jpeg { filter: saturate(1.12) contrast(1.13); }
+.look-preview-ccd { filter: saturate(1.28) contrast(1.12) brightness(1.02); }
+.look-preview-nokia, .look-preview-quarter-inch { filter: saturate(0.72) contrast(1.13) blur(0.3px); }
+.look-preview-iphone-3gs { filter: saturate(0.88) contrast(1.08) blur(0.2px); }
+.look-preview-sony-cybershot { filter: saturate(1.13) contrast(1.18) hue-rotate(4deg); }
+.look-preview-canon-powershot, .look-preview-canon-ixus { filter: saturate(1.2) contrast(1.18) sepia(0.08); }
+.look-preview-nikon-coolpix, .look-preview-panasonic-lumix { filter: saturate(0.96) contrast(1.23) hue-rotate(8deg); }
+.look-preview-fujifilm-finepix { filter: saturate(1.28) contrast(1.04) sepia(0.08); }
+.look-preview-casio-exilim { filter: saturate(1.38) contrast(1.2); }
+.look-preview-olympus-camedia, .look-preview-kodak-easyshare { filter: saturate(1.12) sepia(0.12) contrast(1.08); }
+.look-preview-pentax-optio, .look-preview-samsung-digimax { filter: saturate(0.92) contrast(1.2) blur(0.25px); }
+.look-preview-early-camera-phone { filter: saturate(0.78) contrast(1.08) blur(0.4px); }
+.look-preview-night-flash-compact { filter: brightness(0.94) contrast(1.28) saturate(1.05); }
+
+/* ---------- frame collection ---------- */
+.frame-gallery-intro { padding-bottom: 4px; }
+.frame-card {
+  display: flex; min-width: 0; flex-direction: column; gap: 4px; padding: 5px;
+  border: 1px solid #aaa69e; background: #e8e5dd; color: #1c1c1c; text-align: left;
+  cursor: default;
+}
+.frame-card:hover, .frame-card:focus-visible {
+  border-color: #5d6e91; outline: 1px dotted #151515; outline-offset: -3px;
+}
+.frame-card[data-selected="true"] {
+  border-color: #0a246a; background: #dce4f0;
+  box-shadow: inset 0 0 0 1px #ffffff, inset 0 0 0 2px #7285a9;
+}
+.frame-card-stage {
+  display: flex; height: 106px; align-items: center; justify-content: center;
+  overflow: hidden; border: 1px solid #76736b; background: #8a8982;
+}
+.frame-card-preview {
+  display: block; max-width: 100%; max-height: 100%; object-fit: contain;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.frame-card-meta { display: flex; min-width: 0; align-items: baseline; justify-content: space-between; gap: 3px; }
+.frame-card-label {
+  overflow: hidden; font-family: var(--font-display); font-size: 11px;
+  font-weight: 800; text-overflow: ellipsis; white-space: nowrap;
+}
+.frame-card-family {
+  flex: 0 0 auto; color: #6a675f; font-family: var(--font-data);
+  font-size: 7px; text-transform: uppercase;
+}
+.frame-card-note { min-height: 26px; color: #58564f; font-size: 9px; line-height: 1.3; }
+
+.editor-panel-tabs .ui-btn, .editor-panel-tabs .ui-tab {
+  min-width: 0; min-height: 28px; padding: 3px 4px;
+  font-family: var(--font-display); font-size: 10px; font-weight: 800;
+  text-transform: capitalize;
+}
+@media (max-width: 1023px) { .editor-panel-tabs { overflow: hidden; } }
+@media (max-width: 420px) {
+  .brand-subtitle { display: none; }
+  .brand-heading { gap: 5px; }
+  .editor-panel-tabs .ui-btn, .editor-panel-tabs .ui-tab { font-size: 9px; }
+}
+
+.status-message { font-family: var(--font-ui); font-size: 11px; }
+.status-data { font-family: var(--font-data); font-size: 9px; }
+
+
+/* Bounded frame positioning controls */
+.frame-adjustments {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 7px 5px 3px;
+  padding: 8px;
+  border: 1px solid #aaa69e;
+  background: #e8e5dd;
+  color: #23221f;
+}
+.frame-adjustments strong {
+  font-family: var(--font-display);
+  font-size: 11px;
+}
+.frame-scale-value {
+  min-width: 48px;
+  padding: 2px 5px;
+  border: 1px inset #a5a29a;
+  background: #ffffff;
+  color: #222222;
+  font-family: var(--font-data);
+  font-size: 10px;
+  text-align: right;
+}
+.frame-adjustment-hint {
+  color: #3f3d37;
+  font-size: 9px;
+  line-height: 1.3;
+}
+.frame-adjustment-safety {
+  color: #66635c;
+  font-family: var(--font-data);
+  font-size: 8px;
+  line-height: 1.35;
 }

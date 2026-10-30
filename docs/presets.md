@@ -56,7 +56,38 @@ Preset previews are cached per photo and output size after their first render. T
 
 ## Preset groups
 
-The UI separates generic image filters from camera-character profiles. The **Filters** submenu contains B&W, Sepia, Negative, Warm, Cool and High Contrast. **Camera 2** contains the small-sensor/early-phone profiles Nokia, 1/4" and iPhone3gs. Other compact-camera profiles remain directly visible.
+The editor gives camera profiles and colour treatments separate galleries. The
+**Filters** gallery groups its nine treatments into **Colour** (Golden, Blue Hour,
+CCD Chrome), **Mono** (Mono, Sepia Print, Negative), and **Digital** (Hard
+Contrast, Cross Color, Soft Flash). **Phones** contains Nokia, 1/4" and
+iPhone3gs; the other camera-character looks appear under **Cameras**.
+
+Look cards use a crop of the currently opened photo, so choices can be compared
+without switching away from the workspace. Their small proof treatments are
+visual approximations; the Canvas2D renderer remains the source of truth for
+the exported result.
+
+## Photo frames
+
+Frames are a separate document setting, not a camera preset. Select one from the
+Frames panel and it is rendered into the exported image:
+
+- `windows-98` — blue title bar, grey menu row, bevel and inset photograph
+- `polaroid` — warm instant-print paper with a caption strip
+- `film-strip` — dark 35mm rails and sprocket holes
+- `contact-sheet` — a large print plus three miniature crops
+- `lcd-playback` — compact-camera playback screen
+- `collage` — layered paper mount with small tape details
+- `date-stamp` — decorative amber date imprint
+- `mini-dv` — camcorder playback and recording indicators
+- `gallery-mat` — archival paper mount and print number
+
+The frame preserves the source canvas dimensions. The photo is cover-fitted
+inside each frame aperture by default. Drag in the main preview to reposition
+the crop, or adjust its scale from the Frames panel. Horizontal and vertical
+offsets are clamped to the available crop area, so empty strips cannot appear
+inside the border and no frame element can escape the output canvas. Frame
+position and scale are included in undo/redo, saved looks, and export.
 
 Preset transforms are separate from the filter look and are committed through the same Apply/Undo workflow.
 
