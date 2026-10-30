@@ -21,9 +21,9 @@ The preset library currently contains **28 looks**:
 - **Original**
 - **JPEG**
 - **CCD**
-- **Filters:** B&W, Sepia, Negative, Warm, Cool, High Contrast, Cross Process,
-  Chrome, Soft Flash
-- **Camera 2:** Nokia, 1/4", iPhone3gs
+- **Filters:** Mono, Sepia Print, Negative, Golden, Blue Hour, Hard Contrast,
+  Cross Color, CCD Chrome, Soft Flash
+- **Phones:** Nokia, 1/4", iPhone3gs
 - **Compact-camera profiles:** Sony Cyber-shot, Canon PowerShot, Canon Digital IXUS,
   Nikon COOLPIX, Fujifilm FinePix, Casio Exilim, Olympus CAMEDIA, Panasonic Lumix,
   Kodak EasyShare, Pentax Optio, Samsung Digimax, Early Camera Phone,
@@ -35,9 +35,9 @@ color-science replication.
 ### Photo frames
 
 The Frames panel applies a border to the photo itself. Available styles include
-Windows 98, Instant Print, 35mm Film, Contact Sheet, Camera LCD playback, and
-Paper Collage. The frame is baked into the exported image and keeps the original
-output dimensions.
+Windows 98, Instant Print, 35mm Negative, Contact Sheet, Camera LCD, Paper
+Collage, Date Print, MiniDV and Gallery Mat. Each frame is rendered into the
+photo itself, appears in the live preview, and travels with the export.
 
 ### My Camera Looks
 
@@ -245,9 +245,16 @@ grey panels, hard borders, beveled controls, and restrained blue selection
 states. The supplied Windows reference is recreated as a **photo frame effect**,
 not as extra chrome around the editor window.
 
+Typography has three practical roles: Trebuchet-style display text for names
+and section headings, Tahoma-style UI text for controls, and Lucida Console /
+Consolas for camera readouts and numeric values. The app uses local system-font
+fallbacks rather than loading external font files.
+
 The first screen stays focused on the photo itself: open, drop, or paste an image,
-then explore looks, frames, and adjustments directly in the workspace. There is
-no blocking onboarding walkthrough.
+then explore camera looks, dedicated colour filters, photo frames, and manual
+adjustments directly in the workspace. The Looks, Filters and Frames galleries
+use the same opened photo for their visual previews. There is no blocking
+onboarding walkthrough.
 
 It avoids gradients, glassmorphism, neon glow, cyberpunk styling, and generic
 SaaS dashboard patterns.

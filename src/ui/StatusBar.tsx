@@ -20,15 +20,15 @@ export function StatusBar({
   return (
     <div className="flex items-center gap-[3px] bg-[color:var(--face)] px-[3px] py-[3px]">
       <p
-        className="bevel-thin-in min-w-0 flex-1 truncate px-2 py-[3px] text-[11px]"
+        className="status-message bevel-thin-in min-w-0 flex-1 truncate px-2 py-[3px] text-[11px]"
         aria-live="polite"
       >
         {message}
       </p>
-      <p className="bevel-thin-in hidden shrink-0 px-2 py-[3px] font-mono text-[11px] sm:block">
+      <p className="status-data bevel-thin-in hidden shrink-0 px-2 py-[3px] text-[11px] sm:block">
         {detail}
       </p>
-      <p className="bevel-thin-in hidden shrink-0 px-2 py-[3px] font-mono text-[11px] lg:block">
+      <p className="status-data bevel-thin-in hidden shrink-0 px-2 py-[3px] text-[11px] lg:block">
         {engine}
       </p>
       <Button
