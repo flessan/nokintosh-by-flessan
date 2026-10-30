@@ -68,24 +68,29 @@ function FrameThumbnail({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Keep one consistent proof aspect ratio. The original implementation
-    // forced portrait photos to a 48px minimum width, stretching the preview
-    // and making several frame cards look broken.
-    canvas.width = THUMBNAIL_WIDTH;
-    canvas.height = THUMBNAIL_HEIGHT;
+    const source = photo?.preview as HTMLCanvasElement | undefined;
+    // Keep the source photo's orientation while fitting the card proof inside
+    // a fixed preview box. Portrait frames stay portrait instead of being
+    // letterboxed into a forced landscape canvas.
+    const sourceWidth = source?.width ?? THUMBNAIL_WIDTH;
+    const sourceHeight = source?.height ?? THUMBNAIL_HEIGHT;
+    const scale = Math.min(THUMBNAIL_WIDTH / sourceWidth, THUMBNAIL_HEIGHT / sourceHeight);
+    const width = Math.max(1, Math.round(sourceWidth * scale));
+    const height = Math.max(1, Math.round(sourceHeight * scale));
+    canvas.width = width;
+    canvas.height = height;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+    ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = "#c9d8d3";
-    ctx.fillRect(0, 0, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+    ctx.fillRect(0, 0, width, height);
 
-    const source = photo?.preview as HTMLCanvasElement | undefined;
     if (source) {
-      drawPhotoContain(ctx, source, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+      drawPhotoContain(ctx, source, width, height);
     } else {
-      drawSample(ctx, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+      drawSample(ctx, width, height);
     }
 
     try {
