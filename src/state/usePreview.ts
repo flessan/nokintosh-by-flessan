@@ -7,6 +7,7 @@ import type {
   EffectParams,
   FilterMode,
   FrameMode,
+  FramePosition,
   SpecialEffectState,
 } from "../engine/types";
 import { applySpecialEffect, specialEffectKey } from "../engine/specialEffect";
@@ -66,6 +67,7 @@ export function usePreview(
   presetId: string,
   filter: FilterMode,
   frame: FrameMode,
+  framePosition: FramePosition,
   transform: ImageTransform,
   specialEffect: SpecialEffectState,
   showOriginal: boolean,
@@ -82,6 +84,7 @@ export function usePreview(
   const presetRef = useRef(presetId);
   const filterRef = useRef(filter);
   const frameRef = useRef(frame);
+  const framePositionRef = useRef(framePosition);
   const transformRef = useRef(transform);
   const specialEffectRef = useRef(specialEffect);
 
@@ -103,6 +106,7 @@ export function usePreview(
   presetRef.current = presetId;
   filterRef.current = filter;
   frameRef.current = frame;
+  framePositionRef.current = framePosition;
   transformRef.current = transform;
   specialEffectRef.current = specialEffect;
 
@@ -180,6 +184,9 @@ export function usePreview(
       bh,
       filterRef.current,
       frameRef.current,
+      framePositionRef.current.zoom.toFixed(3),
+      framePositionRef.current.x.toFixed(3),
+      framePositionRef.current.y.toFixed(3),
       transformRef.current.mirror ? "mh" : "m0",
       transformRef.current.flipVertical ? "fv" : "f0",
       paramsKey(paramsRef.current),
@@ -288,7 +295,7 @@ export function usePreview(
       r.render(paramsRef.current, filterRef.current);
       applyCanvasTransform(canvas, transformRef.current);
       applySpecialEffect(canvas, specialEffectRef.current);
-      applyFrame(canvas, frameRef.current);
+      applyFrame(canvas, frameRef.current, framePositionRef.current);
 
       if (key) {
         const ctx = canvas.getContext("2d");
@@ -340,6 +347,9 @@ export function usePreview(
     presetId,
     filter,
     frame,
+    framePosition.zoom,
+    framePosition.x,
+    framePosition.y,
     transform.mirror,
     specialEffect,
 

@@ -46,7 +46,7 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement | null>(null);
   const dragDepth = useRef(0);
 
-  const { photo, params, presetId, filter, frame, transform, specialEffect } = editor;
+  const { photo, params, presetId, filter, frame, framePosition, transform, specialEffect } = editor;
   const cacheCustom = !editor.hasUnappliedChanges;
   const { canvasRef, stageRef, info } = usePreview(
     photo,
@@ -54,6 +54,7 @@ export default function App() {
     presetId,
     filter,
     frame,
+    framePosition,
     transform,
     specialEffect,
     showOriginal,
@@ -150,6 +151,7 @@ export default function App() {
           transform,
           frame,
           specialEffect,
+          framePosition,
         );
         const presetName = PRESET_MAP[presetId]?.name ?? "custom";
         const name = buildFilename(photo.name, presetName, result.format);
@@ -165,7 +167,7 @@ export default function App() {
         setExporting(false);
       }
     },
-    [editor, exporting, filter, frame, params, photo, presetId, specialEffect, transform],
+    [editor, exporting, filter, frame, framePosition, params, photo, presetId, specialEffect, transform],
   );
 
   const quickExport = useCallback(() => {
