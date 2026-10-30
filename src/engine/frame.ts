@@ -106,10 +106,23 @@ function drawWindows98(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement,
   ctx.fillRect(outer, outer, w - outer * 2, titleHeight);
 
   const fontSize = Math.max(8, Math.round(titleHeight * 0.56));
+  const iconSize = Math.max(7, Math.round(titleHeight * 0.48));
+  const iconX = outer + Math.max(2, Math.round(outer * 0.7));
+  const iconY = outer + Math.round((titleHeight - iconSize) / 2);
+  ctx.fillStyle = "#e7e7dc";
+  ctx.fillRect(iconX, iconY, iconSize, iconSize);
+  ctx.fillStyle = "#1b69a5";
+  ctx.fillRect(iconX + 1, iconY + 1, Math.max(2, iconSize * 0.45), Math.max(2, iconSize * 0.45));
+  ctx.fillStyle = "#d7b94f";
+  ctx.fillRect(iconX + Math.round(iconSize * 0.52), iconY + Math.round(iconSize * 0.52), Math.max(2, iconSize * 0.38), Math.max(2, iconSize * 0.38));
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(iconX + 0.5, iconY + 0.5, iconSize - 1, iconSize - 1);
+
   ctx.font = `bold ${fontSize}px Tahoma, Verdana, sans-serif`;
   ctx.fillStyle = "#ffffff";
   ctx.textBaseline = "middle";
-  ctx.fillText("Photo Viewer", Math.max(8, Math.round(w * 0.04)), titleHeight * 0.5 + outer);
+  ctx.fillText("Photo Viewer", iconX + iconSize + Math.max(3, outer), titleHeight * 0.5 + outer, Math.max(10, controlsX - iconX - iconSize - outer * 2));
 
   const controlSize = Math.max(10, titleHeight - 5);
   const controlGap = 3;
