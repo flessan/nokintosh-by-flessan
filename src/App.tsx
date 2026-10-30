@@ -416,7 +416,9 @@ export default function App() {
       <FramePicker
         value={frame}
         photo={photo}
+        position={framePosition}
         onPick={editor.chooseFrame}
+        onChangePosition={editor.setFramePosition}
       />
     </GroupBox>
   );
@@ -555,6 +557,9 @@ export default function App() {
               loading={editor.loading}
               rendering={info.phase === "loading"}
               presetName={previewName}
+              frame={frame}
+              framePosition={framePosition}
+              onFramePositionChange={editor.setFramePosition}
               zoom={zoom}
               pan={pan}
               mirror={transform.mirror}
