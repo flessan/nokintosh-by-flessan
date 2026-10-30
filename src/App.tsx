@@ -464,9 +464,11 @@ export default function App() {
           <span className="mr-2 flex items-center">
             <CameraMark />
           </span>
-          <h1 className="min-w-0 flex-1 truncate text-[12px] font-bold">
-            Nokintosh // Digicam Utility
-            {photo ? ` // ${photo.name}` : ""}
+          <h1 className="brand-heading min-w-0 flex-1 truncate">
+            <span className="brand-wordmark">NOKINTOSH</span>
+            <span className="brand-divider">/</span>
+            <span className="brand-subtitle">DIGICAM UTILITY</span>
+            {photo && <span className="brand-file">{photo.name}</span>}
           </h1>
           <a
             href={REPO_URL}

@@ -72,7 +72,7 @@ export function SavedLooksPanel({
   return (
     <section className="border-b border-[color:var(--shadow)] px-2 pb-2 pt-2">
       <div className="mb-1 flex items-center justify-between gap-2 px-[2px]">
-        <h2 className="text-[11px] font-bold uppercase tracking-wide">My Camera Looks</h2>
+        <h2 className="panel-heading">My Camera Looks</h2>
         <span className="text-[10px] text-[color:var(--ink-dim)]">{looks.length}/24</span>
       </div>
 
@@ -80,7 +80,7 @@ export function SavedLooksPanel({
         <label className="sr-only" htmlFor="saved-look-name">Name this look</label>
         <input
           id="saved-look-name"
-          className="bevel-sunken min-w-0 flex-1 bg-white px-2 py-1 text-[11px]"
+          className="gallery-search bevel-sunken min-w-0 flex-1 bg-white px-2"
           value={name}
           onChange={(event) => setName(event.target.value)}
           maxLength={32}
@@ -89,7 +89,7 @@ export function SavedLooksPanel({
         />
         <button
           type="submit"
-          className="ui-btn min-h-[25px] px-2 text-[11px] font-bold"
+          className="ui-btn min-h-[28px] px-2 text-[11px] font-bold"
           disabled={!canSave || !name.trim()}
           title={!canSave ? "Open a photo and keep fewer than 24 saved looks" : "Save current settings"}
         >
