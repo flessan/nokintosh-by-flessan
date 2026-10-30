@@ -56,7 +56,22 @@ Preset previews are cached per photo and output size after their first render. T
 
 ## Preset groups
 
-The UI separates generic image filters from camera-character profiles. The **Filters** submenu contains B&W, Sepia, Negative, Warm, Cool and High Contrast. **Camera 2** contains the small-sensor/early-phone profiles Nokia, 1/4" and iPhone3gs. Other compact-camera profiles remain directly visible.
+The look browser separates generic filters from camera-character profiles. The **Filters** category contains B&W, Sepia, Negative, Warm, Cool, High Contrast, Cross Process, Chrome and Soft Flash. **Phones** contains the small-sensor / early-phone profiles Nokia, 1/4" and iPhone3gs. Other compact-camera profiles are grouped under **Cameras**.
+
+## Photo frames
+
+Frames are a separate document setting, not a camera preset. Select one from the
+Frames panel and it is rendered into the exported image:
+
+- `windows-98` — blue title bar, grey menu row and inset photo, based on the supplied reference
+- `polaroid` — warm instant-print paper with a caption strip
+- `film-strip` — dark 35mm rails and sprocket holes
+- `contact-sheet` — large print plus three repeated miniature crops
+- `lcd-playback` — compact-camera playback screen
+- `collage` — paper mat / photo-card border
+
+The frame preserves the source canvas dimensions and keeps the photograph at
+its original aspect ratio.
 
 Preset transforms are separate from the filter look and are committed through the same Apply/Undo workflow.
 

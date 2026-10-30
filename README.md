@@ -21,7 +21,8 @@ The preset library currently contains **28 looks**:
 - **Original**
 - **JPEG**
 - **CCD**
-- **Filters:** B&W, Sepia, Negative, Warm, Cool, High Contrast
+- **Filters:** B&W, Sepia, Negative, Warm, Cool, High Contrast, Cross Process,
+  Chrome, Soft Flash
 - **Camera 2:** Nokia, 1/4", iPhone3gs
 - **Compact-camera profiles:** Sony Cyber-shot, Canon PowerShot, Canon Digital IXUS,
   Nikon COOLPIX, Fujifilm FinePix, Casio Exilim, Olympus CAMEDIA, Panasonic Lumix,
@@ -36,7 +37,7 @@ color-science replication.
 ### My Camera Looks
 
 Save your own effect combinations with a name and reuse them later. Saved looks
-include the complete camera settings, filter, collage frame, image transforms,
+include the complete camera settings, filter, selected photo frame, image transforms,
 and Blur / Pixelate configuration. They are stored locally in the current
 browser (up to 24 looks) and never uploaded. Use **Import** and **Export**
 to move or back up a collection as a JSON file.

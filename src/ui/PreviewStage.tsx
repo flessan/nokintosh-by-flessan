@@ -357,7 +357,7 @@ export function PreviewStage({
               </Button>
             </div>
             <p className="mt-3 text-[10px] text-[color:var(--ink-dim)]">
-              JPEG · PNG · WebP · AVIF · BMP
+              JPEG · PNG · WebP · AVIF · GIF · BMP
             </p>
           </div>
         )}

@@ -57,12 +57,13 @@ source
   -> named filter
   -> mirror / flip
   -> Gaussian Blur or Pixelate
-  -> Collage frame
+  -> selected photo frame (Windows 98 / Instant Print / Film Strip / Contact Sheet / Camera LCD / Paper Collage)
   -> output canvas
 ```
 
-The preview uses a capped working size. Export reruns the pipeline at the
-selected output size.
+Named filters include tuned monochrome, sepia, warm/cool split-tone, high
+contrast, cross-process, chrome and soft-flash treatments. The preview uses a
+capped working size. Export reruns the pipeline at the selected output size.
 
 ## Design rule
 
