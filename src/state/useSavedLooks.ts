@@ -107,7 +107,13 @@ function readSavedLooks(): SavedLook[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isSavedLook).slice(0, MAX_SAVED_LOOKS);
+    return parsed
+      .filter(isSavedLook)
+      .map((look) => ({
+        ...look,
+        framePosition: normalizeFramePosition(look.framePosition ?? DEFAULT_FRAME_POSITION),
+      }))
+      .slice(0, MAX_SAVED_LOOKS);
   } catch {
     return [];
   }

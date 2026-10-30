@@ -82,8 +82,12 @@ Frames panel and it is rendered into the exported image:
 - `mini-dv` — camcorder playback and recording indicators
 - `gallery-mat` — archival paper mount and print number
 
-The frame preserves the source canvas dimensions and keeps the photograph at
-its original aspect ratio.
+The frame preserves the source canvas dimensions. The photo is cover-fitted
+inside each frame aperture by default. Drag in the main preview to reposition
+the crop, or adjust its scale from the Frames panel. Horizontal and vertical
+offsets are clamped to the available crop area, so empty strips cannot appear
+inside the border and no frame element can escape the output canvas. Frame
+position and scale are included in undo/redo, saved looks, and export.
 
 Preset transforms are separate from the filter look and are committed through the same Apply/Undo workflow.
 

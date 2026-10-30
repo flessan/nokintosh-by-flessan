@@ -37,7 +37,9 @@ color-science replication.
 The Frames panel applies a border to the photo itself. Available styles include
 Windows 98, Instant Print, 35mm Negative, Contact Sheet, Camera LCD, Paper
 Collage, Date Print, MiniDV and Gallery Mat. Each frame is rendered into the
-photo itself, appears in the live preview, and travels with the export.
+photo itself, appears in the live preview, and travels with the export. Drag
+the photo in the preview to reposition its crop, or use the frame scale control.
+The crop stays clipped to the selected frame and is saved with the look.
 
 ### My Camera Looks
 
