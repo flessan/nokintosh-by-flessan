@@ -101,11 +101,11 @@ function FrameThumbnail({
       const fallback = canvas.getContext("2d");
       if (!fallback) return;
       fallback.setTransform(1, 0, 0, 1, 0, 0);
-      fallback.clearRect(0, 0, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+      fallback.clearRect(0, 0, width, height);
       if (source) {
-        drawPhotoContain(fallback, source, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+        drawPhotoContain(fallback, source, width, height);
       } else {
-        drawSample(fallback, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+        drawSample(fallback, width, height);
       }
     }
   }, [photo?.preview, frame, position.zoom, position.x, position.y]);
