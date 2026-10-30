@@ -25,7 +25,7 @@ const CAMERAS = PRESETS.filter((preset) =>
 );
 const FILTERS = PRESETS.filter((preset) => FILTER_IDS.has(preset.id));
 const PHONES = PRESETS.filter((preset) => PHONE_IDS.has(preset.id));
-const ALL = PRESETS.filter((preset) => preset.id !== "collage");
+const ALL = PRESETS.filter((preset) => preset.id !== "collage" && preset.id !== "none");
 
 const CATEGORIES: { id: Category; label: string }[] = [
   { id: "all", label: "All" },
@@ -61,6 +61,10 @@ export function PresetList({
   }, [category, query]);
 
   const selected = PRESETS.find((preset) => preset.id === presetId);
+  const showOriginal =
+    category === "all" &&
+    (!query.trim() || "original clean starting point".includes(query.trim().toLowerCase()));
+  const hasVisibleResults = entries.length > 0 || showOriginal;
 
   return (
     <div className="space-y-2">
@@ -93,7 +97,7 @@ export function PresetList({
       </div>
 
       <div className="grid grid-cols-2 gap-[4px] px-[5px]" aria-live="polite">
-        {category === "all" && (
+        {showOriginal && (
           <button
             type="button"
             className="look-card bevel-thin-out"
@@ -136,7 +140,7 @@ export function PresetList({
             {presetId === preset.id && <span className="look-card-check"><CheckMark size={10} /></span>}
           </button>
         ))}
-        {entries.length === 0 && (
+        {!hasVisibleResults && (
           <p className="col-span-2 bevel-thin-in bg-white px-2 py-3 text-center text-[11px] text-[color:var(--ink-dim)]">
             No looks match “{query}”.
           </p>

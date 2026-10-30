@@ -482,7 +482,8 @@ input[type="range"].ui-range::-moz-range-thumb {
 .frame-mini-film-strip::before,
 .frame-mini-film-strip::after {
   position: absolute; top: 4px; bottom: 4px; width: 4px;
-  background: repeating-linear-gradient(to bottom, #e4e0d5 0 4px, transparent 4px 8px);
+  background: #e4e0d5;
+  box-shadow: 0 8px 0 #e4e0d5, 0 16px 0 #e4e0d5, 0 24px 0 #e4e0d5, 0 32px 0 #e4e0d5, 0 40px 0 #e4e0d5;
   content: "";
 }
 .frame-mini-film-strip::before { left: 2px; }
@@ -492,7 +493,8 @@ input[type="range"].ui-range::-moz-range-thumb {
 .frame-mini-contact-sheet .frame-mini-photo { inset: 3px 3px 17px; background: #7c9998; }
 .frame-mini-contact-sheet::after {
   position: absolute; right: 3px; bottom: 3px; left: 3px; height: 10px;
-  background: repeating-linear-gradient(to right, #718c8d 0 17px, #ffffff 17px 20px);
+  background: #718c8d;
+  box-shadow: 20px 0 0 #ffffff, 40px 0 0 #718c8d, 60px 0 0 #ffffff, 80px 0 0 #718c8d, 100px 0 0 #718c8d, 120px 0 0 #718c8d, 140px 0 0 #ffffff, 160px 0 0 #718c8d;
   content: "";
 }
 .frame-mini-lcd-playback { background: #1b2121; border: 4px solid #333a39; }

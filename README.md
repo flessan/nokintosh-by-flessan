@@ -16,7 +16,7 @@ configured public Telegraph Cloud file URL.
 
 ### Digicam looks
 
-The preset library currently contains **26 looks**:
+The preset library currently contains **28 looks**:
 
 - **Original**
 - **JPEG**
