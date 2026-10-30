@@ -158,9 +158,15 @@ export function useEditor() {
     setParams({ ...preset.params });
     setPresetId(id);
     setFilter(preset.filter ?? "none");
-    setFrame(preset.frame ?? "none");
+    if (preset.frame && preset.frame !== "none") setFrame(preset.frame);
     setSpecialEffect(cloneSpecialEffect(DEFAULT_SPECIAL_EFFECT));
     setStatus("[Loading] " + preset.name + " // " + preset.note);
+  }, []);
+
+  const chooseFrame = useCallback((nextFrame: FrameMode) => {
+    setFrame(nextFrame);
+    setPresetId("custom");
+    setStatus(nextFrame === "none" ? "Photo frame removed." : "Photo frame // " + nextFrame);
   }, []);
 
   /** Loads a browser-saved look into the live draft without committing history. */
@@ -481,6 +487,7 @@ export function useEditor() {
     closePhoto,
     applyPreset,
     applySavedLook,
+    chooseFrame,
     applyChanges,
     toggleMirror,
     toggleFlipVertical,

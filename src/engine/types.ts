@@ -47,9 +47,19 @@ export type FilterMode =
   | "negative"
   | "warm"
   | "cool"
-  | "high-contrast";
+  | "high-contrast"
+  | "cross-process"
+  | "chrome"
+  | "soft-flash";
 
-export type FrameMode = "none" | "collage";
+export type FrameMode =
+  | "none"
+  | "collage"
+  | "windows-98"
+  | "polaroid"
+  | "film-strip"
+  | "contact-sheet"
+  | "lcd-playback";
 
 export type SpecialEffectKind = "none" | "gaussian-blur" | "pixelate";
 export type SpecialEffectMode = "uniform" | "vignette" | "draw";

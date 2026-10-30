@@ -2,6 +2,7 @@ import {
   DEFAULT_PARAMS,
   type EffectParams,
   type FilterMode,
+  type FrameMode,
   type Preset,
 } from "./types";
 
@@ -20,7 +21,7 @@ function preset(
   note: string,
   params: Partial<EffectParams>,
   filter: FilterMode = "none",
-  frame: "none" | "collage" = "none",
+  frame: FrameMode = "none",
 ): Preset {
   return {
     id,
@@ -101,16 +102,37 @@ export const PRESETS: Preset[] = [
   preset(
     "high-contrast",
     "High Contrast",
-    "Punchy digital contrast with clipped highlights and deeper blacks.",
-    { contrast: 0.08, saturation: 0.08, sharpen: 0.2 },
+    "A hard, compact-camera tone curve with crisp blacks and bright highlights.",
+    { contrast: 0.22, saturation: 0.06, sharpen: 0.28, jpeg: 0.08 },
     "high-contrast",
+  ),
+  preset(
+    "cross-process",
+    "Cross Process",
+    "Unexpected cyan shadows and warm highlights, like a playful early digital preset.",
+    { contrast: 0.2, saturation: 0.16, colorShift: 0.22, fade: 0.05 },
+    "cross-process",
+  ),
+  preset(
+    "chrome",
+    "Chrome",
+    "Punchy blue skies, lively colour and clean, crunchy compact-camera edges.",
+    { contrast: 0.28, saturation: 0.28, sharpen: 0.62, jpeg: 0.12, colorShift: 0.18 },
+    "chrome",
+  ),
+  preset(
+    "soft-flash",
+    "Soft Flash",
+    "A bright, close-flash snapshot with warm midtones and gently blooming highlights.",
+    { exposure: 0.12, flash: 0.34, bloom: 0.32, softness: 0.06, contrast: 0.08, temperature: 0.12 },
+    "soft-flash",
   ),
 
   // Non-filter reference looks.
   preset(
     "collage",
     "Collage",
-    "Single-photo collage frame: clean paper border and printed-card presentation.",
+    "Legacy paper-frame preset; choose it from the Frames panel for new edits.",
     {},
     "none",
     "collage",

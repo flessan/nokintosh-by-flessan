@@ -28,6 +28,18 @@ const FILTERS = new Set<FilterMode>([
   "warm",
   "cool",
   "high-contrast",
+  "cross-process",
+  "chrome",
+  "soft-flash",
+]);
+const FRAMES = new Set([
+  "none",
+  "collage",
+  "windows-98",
+  "polaroid",
+  "film-strip",
+  "contact-sheet",
+  "lcd-playback",
 ]);
 
 function createId(): string {
@@ -54,7 +66,8 @@ function isSavedLook(value: unknown): value is SavedLook {
       .every((key) => typeof params[key] === "number" && Number.isFinite(params[key])) &&
     typeof item.filter === "string" &&
     FILTERS.has(item.filter as FilterMode) &&
-    (item.frame === "none" || item.frame === "collage") &&
+    typeof item.frame === "string" &&
+    FRAMES.has(item.frame) &&
     !!transform &&
     typeof transform.mirror === "boolean" &&
     typeof transform.flipVertical === "boolean" &&
