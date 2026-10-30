@@ -39,6 +39,51 @@ export function preloadFrameAsset(frame: FrameMode): Promise<void> {
   return load;
 }
 
+function drawFrameApertures(
+  ctx: CanvasRenderingContext2D,
+  source: HTMLCanvasElement,
+  frame: FrameMode,
+  width: number,
+  height: number,
+  position: FramePosition,
+) {
+  const photo = (x: number, y: number, w: number, h: number) =>
+    drawFramedPhoto(ctx, source, width * x / 1000, height * y / 1000, width * w / 1000, height * h / 1000, position);
+
+  switch (frame) {
+    case "windows-98":
+      photo(45, 185, 910, 750);
+      break;
+    case "polaroid":
+      photo(75, 65, 850, 715);
+      break;
+    case "film-strip":
+      photo(140, 55, 720, 890);
+      break;
+    case "contact-sheet":
+      photo(55, 55, 890, 680);
+      drawCover(ctx, source, width * 57 / 1000, height * 749 / 1000, width * 285 / 1000, height * 139 / 1000);
+      drawCover(ctx, source, width * 357 / 1000, height * 749 / 1000, width * 285 / 1000, height * 139 / 1000);
+      drawCover(ctx, source, width * 658 / 1000, height * 749 / 1000, width * 285 / 1000, height * 139 / 1000);
+      break;
+    case "lcd-playback":
+      photo(55, 190, 890, 625);
+      break;
+    case "collage":
+      photo(55, 55, 890, 854);
+      break;
+    case "date-stamp":
+      photo(0, 0, 1000, 1000);
+      break;
+    case "mini-dv":
+      photo(35, 175, 930, 670);
+      break;
+    case "gallery-mat":
+      photo(85, 70, 830, 730);
+      break;
+  }
+}
+
 function drawFrameAsset(ctx: CanvasRenderingContext2D, frame: FrameMode, width: number, height: number) {
   if (frame === "none") return;
   const image = frameAssetImages.get(frame as ImageFrameMode);
@@ -511,36 +556,41 @@ export function applyFrame(
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, w, h);
 
-    switch (frame) {
-      case "windows-98":
-        drawWindows98(ctx, source, w, h, position);
-        break;
-      case "polaroid":
-        drawPolaroid(ctx, source, w, h, position);
-        break;
-      case "film-strip":
-        drawFilmStrip(ctx, source, w, h, position);
-        break;
-      case "contact-sheet":
-        drawContactSheet(ctx, source, w, h, position);
-        break;
-      case "lcd-playback":
-        drawLcd(ctx, source, w, h, position);
-        break;
-      case "collage":
-        drawCollage(ctx, source, w, h, position);
-        break;
-      case "date-stamp":
-        drawDateStamp(ctx, source, w, h, position);
-        break;
-      case "mini-dv":
-        drawMiniDV(ctx, source, w, h, position);
-        break;
-      case "gallery-mat":
-        drawGalleryMat(ctx, source, w, h, position);
-        break;
+    if (isFrameAssetReady(frame)) {
+      drawFrameApertures(ctx, source, frame, w, h, position);
+      drawFrameAsset(ctx, frame, w, h);
+    } else {
+      switch (frame) {
+        case "windows-98":
+          drawWindows98(ctx, source, w, h, position);
+          break;
+        case "polaroid":
+          drawPolaroid(ctx, source, w, h, position);
+          break;
+        case "film-strip":
+          drawFilmStrip(ctx, source, w, h, position);
+          break;
+        case "contact-sheet":
+          drawContactSheet(ctx, source, w, h, position);
+          break;
+        case "lcd-playback":
+          drawLcd(ctx, source, w, h, position);
+          break;
+        case "collage":
+          drawCollage(ctx, source, w, h, position);
+          break;
+        case "date-stamp":
+          drawDateStamp(ctx, source, w, h, position);
+          break;
+        case "mini-dv":
+          drawMiniDV(ctx, source, w, h, position);
+          break;
+        case "gallery-mat":
+          drawGalleryMat(ctx, source, w, h, position);
+          break;
+      }
+  
     }
-    drawFrameAsset(ctx, frame, w, h);
   } finally {
     ctx.restore();
     source.width = 0;
