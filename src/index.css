@@ -10,9 +10,9 @@
   --ink: #000000;
   --ink-dim: #4a4a4a;
   --disabled: #9a968f;
-  --title: #000080;
+  --title: #0a246a;
   --title-dim: #7f8ab4;
-  --sel: #000080;
+  --sel: #0a246a;
   --desktop: #3a6ea5;
   --field: #ffffff;
 }
@@ -166,11 +166,10 @@ textarea {
 .title-bar {
   background: var(--title);
   color: #ffffff;
-  height: 28px;
+  height: 24px;
   display: flex;
   align-items: center;
   padding: 0 3px 0 4px;
-  box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2);
   user-select: none;
 }
 
@@ -182,6 +181,11 @@ textarea {
 .ui-tab:focus-visible {
   background: var(--sel) !important;
   color: #ffffff !important;
+}
+
+.ui-tab[data-pressed="true"] {
+  background: var(--sel);
+  color: #ffffff;
 }
 
 /* ---------- range sliders (classic trackbar) ---------- */
@@ -333,91 +337,201 @@ input[type="range"].ui-range::-moz-range-thumb {
 }
 
 
-/* ---------- classic Windows window chrome ---------- */
-.window-frame {
-  box-sizing: border-box;
-  border: 1px solid #f5f5f5;
-  outline: 1px solid #777777;
-  outline-offset: 0;
-}
 
-.window-controls {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 3px;
-  margin-left: 6px;
-  padding-left: 2px;
-}
 
-.window-control {
-  display: inline-flex;
-  width: 22px;
-  height: 20px;
+/* ---------- photo-look browser ---------- */
+.look-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 78px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  overflow: hidden;
+  padding: 5px;
+  background: #e9e7df;
+  text-align: left;
+  cursor: default;
+}
+.look-card:hover,
+.look-card:focus-visible {
+  outline: 1px dotted var(--ink);
+  outline-offset: -3px;
+}
+.look-card[data-selected="true"] {
+  background: #d9e1f2;
+  box-shadow: inset 0 0 0 1px var(--sel), inset 0 0 0 2px #ffffff;
+}
+.look-card-mark {
+  display: flex;
+  min-height: 28px;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  border: 0;
-  background: var(--face);
-  color: #111111;
-  box-shadow:
-    inset -1px -1px 0 0 var(--dark),
-    inset 1px 1px 0 0 var(--hi),
-    inset -2px -2px 0 0 var(--shadow),
-    inset 2px 2px 0 0 var(--light);
-  font-family: Arial, sans-serif;
-  font-size: 16px;
+  overflow: hidden;
+  background: #a8b5bd;
+  color: #ffffff;
+  font-family: Tahoma, Verdana, sans-serif;
+  font-size: 9px;
   font-weight: 700;
-  line-height: 1;
-  cursor: default;
+  letter-spacing: 0.08em;
+  text-align: center;
 }
-
-.window-control:active {
-  box-shadow:
-    inset 1px 1px 0 0 var(--shadow),
-    inset 2px 2px 0 0 var(--dark);
-  padding: 1px 0 0 1px;
-}
-
-.window-control:focus-visible {
-  outline: 1px dotted #ffffff;
-  outline-offset: -4px;
-}
-
-.window-control-close {
-  margin-left: 2px;
-  font-size: 19px;
-}
-
-.window-restore {
-  position: fixed;
-  bottom: 16px;
-  left: 16px;
-  z-index: 60;
-  display: inline-flex;
-  min-height: 34px;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  border: 1px solid #f5f5f5;
-  background: var(--face);
+.look-card-mark-original { background: #8c9a91; }
+.look-card-mark-bw { background: #606060; }
+.look-card-mark-sepia { background: #98744d; }
+.look-card-mark-negative { background: #5d6f83; }
+.look-card-mark-warm-filter { background: #bc8656; }
+.look-card-mark-cool-filter { background: #6c90a6; }
+.look-card-mark-high-contrast { background: #363636; }
+.look-card-mark-cross-process { background: #668b83; }
+.look-card-mark-chrome { background: #497e9e; }
+.look-card-mark-soft-flash { background: #d0a77d; color: #473526; }
+.look-card-mark-ccd { background: #557f85; }
+.look-card-mark-jpeg { background: #8c999c; }
+.look-card-mark-nokia,
+.look-card-mark-quarter-inch,
+.look-card-mark-iphone-3gs,
+.look-card-mark-early-camera-phone { background: #71816a; }
+.look-card-mark-night-flash-compact { background: #30323a; }
+.look-card-name {
+  overflow: hidden;
   color: var(--ink);
-  box-shadow:
-    inset -1px -1px 0 0 var(--dark),
-    inset 1px 1px 0 0 var(--hi),
-    inset -2px -2px 0 0 var(--shadow),
-    inset 2px 2px 0 0 var(--light),
-    2px 2px 0 rgba(0,0,0,0.25);
+  font-size: 11px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.look-card-note {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-dim);
+  font-size: 9px;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.look-card-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  width: 15px;
+  height: 15px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ffffff;
+  background: var(--sel);
+  color: #ffffff;
+}
+
+/* ---------- film / photo frame picker ---------- */
+.frame-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 5px;
+  background: #e9e7df;
+  text-align: left;
   cursor: default;
 }
-
-.window-restore:active {
-  box-shadow:
-    inset 1px 1px 0 0 var(--shadow),
-    inset 2px 2px 0 0 var(--dark);
+.frame-card[data-selected="true"] {
+  background: #d9e1f2;
+  box-shadow: inset 0 0 0 1px var(--sel), inset 0 0 0 2px #ffffff;
 }
-
-.window-restore:focus-visible {
+.frame-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.frame-card:not(:disabled):hover,
+.frame-card:focus-visible {
   outline: 1px dotted var(--ink);
-  outline-offset: -4px;
+  outline-offset: -3px;
+}
+.frame-card-label { font-size: 10px; font-weight: 700; }
+.frame-card-note { min-height: 28px; color: var(--ink-dim); font-size: 9px; line-height: 1.25; }
+.frame-mini {
+  position: relative;
+  display: block;
+  height: 52px;
+  overflow: hidden;
+  background: #bdbdbd;
+}
+.frame-mini-photo {
+  position: absolute;
+  display: block;
+  background: #76969a;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.16);
+}
+.frame-mini-none { background: #a9a9a9; }
+.frame-mini-none .frame-mini-photo { inset: 0; background: #6e9294; }
+.frame-mini-windows-98 { padding: 17px 5px 4px; border: 2px solid #f3f3f3; }
+.frame-mini-windows-98::before {
+  position: absolute; top: 0; left: 0; width: 100%; height: 8px;
+  background: #000080; content: "";
+}
+.frame-mini-windows-98::after {
+  position: absolute; top: 9px; left: 0; width: 100%; height: 5px;
+  background: #d4d0c8; content: "";
+}
+.frame-mini-windows-98 .frame-mini-photo { inset: 16px 5px 3px; background: #e6e6e6; }
+.frame-mini-polaroid { background: #f8f5eb; border: 3px solid #ddd8cc; border-bottom-width: 12px; }
+.frame-mini-polaroid .frame-mini-photo { inset: 3px; background: #9aafb0; }
+.frame-mini-film-strip { background: #202020; border-left: 10px solid #303030; border-right: 10px solid #303030; }
+.frame-mini-film-strip::before,
+.frame-mini-film-strip::after {
+  position: absolute; top: 4px; bottom: 4px; width: 4px;
+  background: repeating-linear-gradient(to bottom, #e4e0d5 0 4px, transparent 4px 8px);
+  content: "";
+}
+.frame-mini-film-strip::before { left: 2px; }
+.frame-mini-film-strip::after { right: 2px; }
+.frame-mini-film-strip .frame-mini-photo { inset: 5px 10px; background: #6d8389; }
+.frame-mini-contact-sheet { background: #e5e2d9; border: 3px solid #d5d2c8; }
+.frame-mini-contact-sheet .frame-mini-photo { inset: 3px 3px 17px; background: #7c9998; }
+.frame-mini-contact-sheet::after {
+  position: absolute; right: 3px; bottom: 3px; left: 3px; height: 10px;
+  background: repeating-linear-gradient(to right, #718c8d 0 17px, #ffffff 17px 20px);
+  content: "";
+}
+.frame-mini-lcd-playback { background: #1b2121; border: 4px solid #333a39; }
+.frame-mini-lcd-playback::before {
+  position: absolute; top: 3px; left: 4px; right: 4px; height: 5px;
+  background: #3e4a48; content: "";
+}
+.frame-mini-lcd-playback .frame-mini-photo { inset: 11px 4px 10px; background: #788f7f; }
+.frame-mini-collage { background: #f4f1e8; border: 4px solid #d8d5cb; border-bottom-width: 10px; }
+.frame-mini-collage .frame-mini-photo { inset: 3px; background: #9aa9a0; }
+
+.first-photo-card { max-width: 460px; }
+.first-photo-icon {
+  position: relative;
+  width: 50px;
+  height: 42px;
+  margin: 0 auto 12px;
+  border: 2px solid #666666;
+  background: #e4e4e4;
+  box-shadow: inset 2px 2px 0 #ffffff, inset -2px -2px 0 #999999;
+}
+.first-photo-icon::before {
+  position: absolute;
+  top: 7px;
+  left: 8px;
+  width: 30px;
+  height: 23px;
+  border: 2px solid #526d7c;
+  background: #8ca9a7;
+  content: "";
+}
+.first-photo-icon::after {
+  position: absolute;
+  top: 12px;
+  right: 13px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid #f7f7f7;
+  border-radius: 50%;
+  background: #e8e4cd;
+  content: "";
 }

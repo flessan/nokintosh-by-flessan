@@ -17,8 +17,9 @@ import { ExportDialog } from "./ui/ExportDialog";
 import { CameraMark, GithubIcon } from "./ui/icons";
 import { MenuBar, type Menu } from "./ui/MenuBar";
 import { PresetList } from "./ui/PresetList";
+import { FramePicker } from "./ui/FramePicker";
+import { FRAME_OPTIONS } from "./engine/frame";
 import { SavedLooksPanel } from "./ui/SavedLooksPanel";
-import { WindowControls } from "./ui/WindowControls";
 import { PreviewStage } from "./ui/PreviewStage";
 import { StatusBar } from "./ui/StatusBar";
 import { Button, GroupBox } from "./ui/widgets";
@@ -28,14 +29,12 @@ const REPO_URL = "https://github.com/flessan/nokintosh-by-flessan";
 export default function App() {
   const editor = useEditor();
   const { looks, saveLook, deleteLook, importLooks } = useSavedLooks();
-  const [windowHidden, setWindowHidden] = useState(false);
-  const [windowMaximized, setWindowMaximized] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragOver, setDragOver] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
-  const [tab, setTab] = useState<"presets" | "effects">("presets");
+  const [tab, setTab] = useState<"looks" | "frames" | "effects">("looks");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportOpts, setExportOpts] = useState<ExportOptions>({
@@ -206,7 +205,6 @@ export default function App() {
       t instanceof HTMLElement &&
       (/^(INPUT|SELECT|TEXTAREA|BUTTON|A)$/.test(t.tagName) || t.isContentEditable);
     const onKeyDown = (e: KeyboardEvent) => {
-      if (windowHidden) return;
       const mod = e.ctrlKey || e.metaKey;
       if (mod && e.key.toLowerCase() === "o") {
         e.preventDefault();
@@ -240,7 +238,7 @@ export default function App() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [editor, pickFile, quickExport, windowHidden]);
+  }, [editor, pickFile, quickExport]);
 
   // ---------- menus ----------
   const menus: Menu[] = useMemo(
@@ -291,14 +289,24 @@ export default function App() {
             action: () => setShowOriginal((v) => !v),
             separatorAfter: true,
           },
-          { label: "Presets Panel", checked: tab === "presets", action: () => setTab("presets") },
+          { label: "Looks Panel", checked: tab === "looks", action: () => setTab("looks") },
+          { label: "Frames Panel", checked: tab === "frames", action: () => setTab("frames") },
           { label: "Effects Panel", checked: tab === "effects", action: () => setTab("effects") },
         ],
       },
       {
+        label: "Frames",
+        items: FRAME_OPTIONS.map((option) => ({
+          label: option.name,
+          checked: frame === option.id,
+          disabled: !photo,
+          action: () => editor.chooseFrame(option.id),
+        })),
+      },
+      {
         label: "Presets",
         items: [
-          ...PRESETS.map((p) => ({
+          ...PRESETS.filter((p) => p.id !== "collage").map((p) => ({
             label: p.name,
             checked: p.id === presetId,
             action: () => editor.applyPreset(p.id),
@@ -338,7 +346,7 @@ export default function App() {
         ],
       },
     ],
-    [editor, photo, presetId, pickFile, quickExport, showOriginal, specialEffect.kind, specialEffect.mode, tab],
+    [editor, photo, presetId, pickFile, quickExport, showOriginal, specialEffect.kind, specialEffect.mode, tab, frame],
   );
 
   const detail = photo
@@ -366,7 +374,7 @@ export default function App() {
         ? `CPU  ${info.previewWidth}x${info.previewHeight}`
         : "idle";
 
-  const presetsPanel = (
+  const looksPanel = (
     <>
       <SavedLooksPanel
         looks={looks}
@@ -376,16 +384,24 @@ export default function App() {
         onDelete={deleteLook}
         onImport={importLooks}
       />
-      <GroupBox label="Presets">
+      <GroupBox label="Camera looks">
         <PresetList
           presetId={presetId}
-          specialEffect={specialEffect}
           onPick={editor.applyPreset}
-          onChooseSpecialEffect={editor.chooseSpecialEffect}
           onHint={setHint}
         />
       </GroupBox>
     </>
+  );
+
+  const framesPanel = (
+    <GroupBox label="Photo frames">
+      <FramePicker
+        value={frame}
+        disabled={!photo}
+        onPick={editor.chooseFrame}
+      />
+    </GroupBox>
   );
 
   const effectsPanel = (
@@ -404,6 +420,7 @@ export default function App() {
         onSetSpecialEffectBrushSize={editor.setSpecialEffectBrushSize}
         onClearSpecialEffectMask={editor.clearSpecialEffectMask}
         onDisableSpecialEffect={editor.disableSpecialEffect}
+        disabled={!photo}
       />
       <div className="mt-2 flex gap-2 px-[5px] pb-1">
         <Button className="flex-1" onClick={editor.resetAll}>
@@ -426,8 +443,8 @@ export default function App() {
   );
 
   return (
-    <div className={`relative flex h-[100dvh] w-full justify-center bg-[color:var(--desktop)] ${windowMaximized ? "" : "lg:items-center lg:p-4"}`}>
-      <div className={`window-frame bevel-raised flex h-full w-full flex-col p-[3px] ${windowMaximized ? "max-w-none" : "max-w-[1440px] lg:h-[min(940px,100%)]"} ${windowHidden ? "hidden" : ""}`}>
+    <div className="flex h-[100dvh] w-full justify-center bg-[color:var(--desktop)] lg:items-center lg:p-4">
+      <div className="bevel-raised flex h-full w-full max-w-[1440px] flex-col p-[3px] lg:h-[min(940px,100%)]">
         {/* ---- title bar ---- */}
         <div className="title-bar shrink-0 overflow-hidden">
           <span className="mr-2 flex items-center">
@@ -447,16 +464,6 @@ export default function App() {
           >
             <GithubIcon size={16} />
           </a>
-          <WindowControls
-            maximized={windowMaximized}
-            onMinimize={() => setWindowHidden(true)}
-            onMaximize={() => setWindowMaximized((value) => !value)}
-            onClose={() => {
-              setWindowHidden(true);
-              setWindowMaximized(false);
-              editor.setStatus("Window closed. Restore Nokintosh to continue.");
-            }}
-          />
         </div>
 
         {/* ---- menu bar ---- */}
@@ -467,16 +474,18 @@ export default function App() {
 
         {/* ---- toolbar ---- */}
         <div className="flex shrink-0 flex-wrap items-center gap-[3px] bg-[color:var(--face)] px-[3px] py-[3px]">
-          <Button onClick={pickFile}>Open...</Button>
+          <Button variant="default" onClick={pickFile}>Open Photo</Button>
           <Button onClick={() => void editor.openSample()}>Sample</Button>
           <span className="mx-1 h-[20px] w-[2px] bevel-thin-in" />
-          <Button onClick={editor.undo} disabled={!editor.canUndo}>
-            Undo
+          <Button onClick={editor.undo} disabled={!editor.canUndo}>Undo</Button>
+          <Button onClick={editor.redo} disabled={!editor.canRedo}>Redo</Button>
+          <Button
+            onClick={editor.applyChanges}
+            disabled={!photo || !editor.hasUnappliedChanges}
+          >
+            Apply
           </Button>
-          <Button onClick={editor.redo} disabled={!editor.canRedo}>
-            Redo
-          </Button>
-          <Button onClick={editor.resetAll}>Reset</Button>
+          <Button onClick={editor.resetAll} disabled={!photo}>Reset</Button>
           <span className="mx-1 hidden h-[20px] w-[2px] bevel-thin-in sm:block" />
           <Button
             className="hidden sm:inline-flex"
@@ -496,9 +505,23 @@ export default function App() {
         {/* ---- workspace ---- */}
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           {/* presets: desktop left */}
-          <aside className="order-1 hidden w-[244px] shrink-0 flex-col overflow-hidden bg-[color:var(--face)] lg:flex">
-            <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
-              {presetsPanel}
+          <aside className="order-1 hidden w-[264px] shrink-0 flex-col overflow-hidden bg-[color:var(--face)] lg:flex">
+            <div className="grid grid-cols-2 gap-[2px] bg-[color:var(--face)] p-[3px]">
+              {(["looks", "frames"] as const).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className="ui-btn min-h-[26px] capitalize"
+                  data-pressed={tab === item}
+                  aria-pressed={tab === item}
+                  onClick={() => setTab(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+            <div className="scroll-thin min-h-0 flex-1 overflow-y-auto border-t border-[color:var(--shadow)]">
+              {tab === "frames" ? framesPanel : looksPanel}
             </div>
           </aside>
 
@@ -530,7 +553,7 @@ export default function App() {
           </main>
 
           {/* effects: desktop right */}
-          <aside className="order-3 hidden w-[244px] shrink-0 flex-col overflow-hidden bg-[color:var(--face)] lg:flex">
+          <aside className="order-3 hidden w-[264px] shrink-0 flex-col overflow-hidden bg-[color:var(--face)] lg:flex">
             <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
               {effectsPanel}
             </div>
@@ -539,7 +562,7 @@ export default function App() {
           {/* side panel: mobile / tablet */}
           <section className="order-4 flex shrink-0 flex-col bg-[color:var(--face)] lg:hidden">
             <div className="flex gap-[2px] px-[3px] pt-[3px]">
-              {(["presets", "effects"] as const).map((t) => (
+              {(["looks", "frames", "effects"] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -555,8 +578,8 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <div className="scroll-thin max-h-[40vh] overflow-y-auto">
-              {tab === "presets" ? presetsPanel : effectsPanel}
+            <div className="scroll-thin max-h-[42vh] overflow-y-auto">
+              {tab === "looks" ? looksPanel : tab === "frames" ? framesPanel : effectsPanel}
             </div>
           </section>
         </div>
@@ -597,18 +620,6 @@ export default function App() {
         onExport={(o) => void runExport(o)}
       />
 
-      {windowHidden && (
-        <button
-          type="button"
-          className="window-restore"
-          onClick={() => setWindowHidden(false)}
-          aria-label="Restore Nokintosh window"
-        >
-          <CameraMark />
-          <span>Nokintosh</span>
-          <span className="text-[10px] font-normal opacity-70">Restore window</span>
-        </button>
-      )}
     </div>
   );
 }

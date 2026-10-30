@@ -27,7 +27,8 @@ The preset library currently contains **26 looks**:
   Nikon COOLPIX, Fujifilm FinePix, Casio Exilim, Olympus CAMEDIA, Panasonic Lumix,
   Kodak EasyShare, Pentax Optio, Samsung Digimax, Early Camera Phone,
   Night Flash Compact
-- **Collage** — a presentation/frame effect rather than a camera look
+- **Frames:** Windows 98 photo window, Instant Print, 35mm Film, Contact Sheet,
+  Camera LCD playback, and Paper Collage
 
 The named camera profiles are character presets, not claims of exact hardware
 color-science replication.
@@ -171,10 +172,11 @@ src/
     usePreview.ts         renderer lifecycle, preview sizing, cache
     useSavedLooks.ts      browser-local saved look library + JSON import
   ui/
-    App.tsx               main Windows-style editor shell
+    App.tsx               main editor workspace
+    FramePicker.tsx       visual frame selection
+    PresetList.tsx        searchable camera-look library
     SavedLooksPanel.tsx   save, load, import and export camera looks
-    WindowControls.tsx    classic minimize / maximize / close controls
-    Other files           preview, menus, effects, export and preset panels
+    Other files           preview, menus, effects and export panels
 ```
 
 The engine layer does not import React UI code.
@@ -232,11 +234,14 @@ requests, so the browser can apply the normal CORS rules directly.
 
 ## Design direction
 
-The interface follows a compact Windows 9x / Windows 2000 utility language:
-a vivid blue title bar, a raised grey window frame, classic window controls,
-hard borders, beveled buttons, compact menus, and restrained blue selection
-states. The window can be minimized, maximized, or hidden and restored without
-discarding the current editing session.
+The interface uses a compact Windows 2000 utility language: a blue title bar,
+grey panels, hard borders, beveled controls, and restrained blue selection
+states. The supplied Windows reference is recreated as a **photo frame effect**,
+not as extra chrome around the editor window.
+
+The first screen stays focused on the photo itself: open, drop, or paste an image,
+then explore looks, frames, and adjustments directly in the workspace. There is
+no blocking onboarding walkthrough.
 
 It avoids gradients, glassmorphism, neon glow, cyberpunk styling, and generic
 SaaS dashboard patterns.

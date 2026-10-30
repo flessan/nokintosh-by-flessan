@@ -340,20 +340,25 @@ export function PreviewStage({
         )}
 
         {!photo && (
-          <div className="bevel-raised m-3 w-[min(420px,92%)] p-4 text-center">
-            <p className="text-[12px] font-bold">No photo open</p>
-            <p className="mt-1 text-[12px] leading-snug text-[color:var(--ink-dim)]">
-              Drop an image here, paste from the clipboard, or choose a file.
-              JPG, PNG and WebP are supported.
+          <div className="first-photo-card bevel-raised m-3 w-[min(460px,94%)] p-5 text-center">
+            <div className="first-photo-icon" aria-hidden="true">
+              <span />
+            </div>
+            <p className="text-[13px] font-bold">Make something from a photo</p>
+            <p className="mx-auto mt-1 max-w-[290px] text-[11px] leading-relaxed text-[color:var(--ink-dim)]">
+              Choose an image, drop it here, or paste one from your clipboard. Your photo stays in this browser.
             </p>
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <Button variant="default" onClick={onOpen} className="min-w-[96px]">
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <Button variant="default" onClick={onOpen} className="min-w-[112px]">
                 Open Photo
               </Button>
-              <Button onClick={onSample} className="min-w-[96px]">
-                Use Sample
+              <Button onClick={onSample} className="min-w-[112px]">
+                Try Sample
               </Button>
             </div>
+            <p className="mt-3 text-[10px] text-[color:var(--ink-dim)]">
+              JPEG · PNG · WebP · AVIF · BMP
+            </p>
           </div>
         )}
 

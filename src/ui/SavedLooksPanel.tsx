@@ -150,7 +150,7 @@ export function SavedLooksPanel({
                 <span className="block truncate text-[10px] opacity-70">
                   {look.specialEffect.kind === "none" ? "Camera settings" : look.specialEffect.kind === "gaussian-blur" ? "Gaussian Blur" : "Pixelate"}
                   {" · "}
-                  {look.frame === "collage" ? "Collage frame" : "No frame"}
+                  {look.frame === "none" ? "No frame" : "Photo frame"}
                 </span>
               </button>
               <button
