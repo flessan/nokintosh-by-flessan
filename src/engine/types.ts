@@ -52,6 +52,14 @@ export type FilterMode =
   | "chrome"
   | "soft-flash";
 
+export interface FramePosition {
+  /** Photo scale inside the frame aperture. 1 means cover-to-fit. */
+  zoom: number;
+  /** Normalized pan across the available crop area, clamped to -1..1. */
+  x: number;
+  y: number;
+}
+
 export type FrameMode =
   | "none"
   | "collage"

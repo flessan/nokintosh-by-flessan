@@ -1,4 +1,57 @@
-import type { FrameMode } from "./types";
+import type { FrameMode, FramePosition } from "./types";
+
+export const DEFAULT_FRAME_POSITION: FramePosition = {
+  zoom: 1,
+  x: 0,
+  y: 0,
+};
+
+export function normalizeFramePosition(position: FramePosition): FramePosition {
+  return {
+    zoom: Math.max(1, Math.min(4, Number.isFinite(position.zoom) ? position.zoom : 1)),
+    x: Math.max(-1, Math.min(1, Number.isFinite(position.x) ? position.x : 0)),
+    y: Math.max(-1, Math.min(1, Number.isFinite(position.y) ? position.y : 0)),
+  };
+}
+
+export function sameFramePosition(a: FramePosition, b: FramePosition): boolean {
+  return Math.abs(a.zoom - b.zoom) < 0.001 &&
+    Math.abs(a.x - b.x) < 0.001 &&
+    Math.abs(a.y - b.y) < 0.001;
+}
+
+/**
+ * Draw the photo edge-to-edge inside one frame aperture. It is always clipped
+ * to the aperture, and panning only moves across the available crop area.
+ */
+function drawFramedPhoto(
+  ctx: CanvasRenderingContext2D,
+  source: HTMLCanvasElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  position: FramePosition = DEFAULT_FRAME_POSITION,
+) {
+  if (width <= 0 || height <= 0 || source.width <= 0 || source.height <= 0) return;
+  const safe = normalizeFramePosition(position);
+  const scale = Math.max(width / source.width, height / source.height) * safe.zoom;
+  const drawWidth = source.width * scale;
+  const drawHeight = source.height * scale;
+  const overflowX = Math.max(0, drawWidth - width);
+  const overflowY = Math.max(0, drawHeight - height);
+  const drawX = x + (width - drawWidth) / 2 + (overflowX * safe.x) / 2;
+  const drawY = y + (height - drawHeight) / 2 + (overflowY * safe.y) / 2;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, width, height);
+  ctx.clip();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(source, drawX, drawY, drawWidth, drawHeight);
+  ctx.restore();
+}
 
 export interface FrameOption {
   id: FrameMode;
@@ -19,26 +72,6 @@ export const FRAME_OPTIONS: FrameOption[] = [
   { id: "mini-dv", name: "MiniDV", note: "A camcorder playback overlay with recording indicators.", family: "Camera" },
   { id: "gallery-mat", name: "Gallery Mat", note: "A clean archival mount with a small print number.", family: "Print" },
 ];
-
-function drawContain(
-  ctx: CanvasRenderingContext2D,
-  source: HTMLCanvasElement,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-) {
-  const scale = Math.min(width / source.width, height / source.height);
-  const drawWidth = source.width * scale;
-  const drawHeight = source.height * scale;
-  ctx.drawImage(
-    source,
-    x + (width - drawWidth) / 2,
-    y + (height - drawHeight) / 2,
-    drawWidth,
-    drawHeight,
-  );
-}
 
 function drawCover(
   ctx: CanvasRenderingContext2D,
@@ -89,7 +122,7 @@ function bevel(
   ctx.stroke();
 }
 
-function drawWindows98(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number) {
+function drawWindows98(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number, position: FramePosition) {
   const face = "#c6c6c6";
   const titleHeight = Math.max(15, Math.round(h * 0.075));
   const menuHeight = Math.max(13, Math.round(h * 0.075));
@@ -170,7 +203,7 @@ function drawWindows98(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement,
   bevel(ctx, imageX - 2, imageY - 2, imageW + 4, imageH + 4, "#ffffff", "#808080");
   ctx.fillStyle = "#e8e8e8";
   ctx.fillRect(imageX, imageY, imageW, imageH);
-  drawContain(ctx, source, imageX, imageY, imageW, imageH);
+  drawFramedPhoto(ctx, source, imageX, imageY, imageW, imageH, position);
 
   ctx.font = `${Math.max(7, Math.round(h * 0.018))}px Tahoma, Verdana, sans-serif`;
   ctx.fillStyle = "#333333";
@@ -178,7 +211,7 @@ function drawWindows98(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement,
   ctx.fillText("Ready", imageX, h - Math.max(5, h * 0.022));
 }
 
-function drawPolaroid(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number) {
+function drawPolaroid(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number, position: FramePosition) {
   const side = Math.round(Math.min(w, h) * 0.075);
   const top = Math.round(Math.min(w, h) * 0.065);
   const bottom = Math.round(Math.min(w, h) * 0.22);
@@ -188,7 +221,7 @@ function drawPolaroid(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, 
   ctx.fillRect(side, top, w - side * 2, h - top - bottom);
   ctx.fillStyle = "#d7d1c4";
   ctx.fillRect(side, top, w - side * 2, h - top - bottom);
-  drawContain(ctx, source, side, top, w - side * 2, h - top - bottom);
+  drawFramedPhoto(ctx, source, side, top, w - side * 2, h - top - bottom, position);
   ctx.strokeStyle = "#d0c9bb";
   ctx.lineWidth = Math.max(1, Math.min(w, h) * 0.002);
   ctx.strokeRect(side + 0.5, top + 0.5, w - side * 2 - 1, h - top - bottom - 1);
@@ -198,7 +231,7 @@ function drawPolaroid(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, 
   ctx.fillText("little moments, kept forever", side + Math.round(side * 0.25), h - bottom * 0.5);
 }
 
-function drawFilmStrip(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number) {
+function drawFilmStrip(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number, position: FramePosition) {
   const rail = Math.round(w * 0.14);
   const top = Math.round(h * 0.055);
   const photoW = w - rail * 2;
@@ -207,7 +240,7 @@ function drawFilmStrip(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement,
   ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = "#303030";
   ctx.fillRect(rail, top, photoW, photoH);
-  drawContain(ctx, source, rail, top, photoW, photoH);
+  drawFramedPhoto(ctx, source, rail, top, photoW, photoH, position);
 
   const holeW = Math.max(3, Math.round(rail * 0.42));
   const holeH = Math.max(4, Math.round(h * 0.042));
@@ -226,7 +259,7 @@ function drawFilmStrip(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement,
   ctx.textAlign = "start";
 }
 
-function drawContactSheet(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number) {
+function drawContactSheet(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number, position: FramePosition) {
   const pad = Math.round(Math.min(w, h) * 0.055);
   const gap = Math.max(3, Math.round(pad * 0.22));
   const mainH = h * 0.68;
@@ -238,7 +271,7 @@ function drawContactSheet(ctx: CanvasRenderingContext2D, source: HTMLCanvasEleme
   ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(pad, pad, w - pad * 2, mainH);
-  drawContain(ctx, source, pad, pad, w - pad * 2, mainH);
+  drawFramedPhoto(ctx, source, pad, pad, w - pad * 2, mainH, position);
 
   for (let i = 0; i < 3; i++) {
     const x = pad + i * (thumbW + gap);
@@ -255,7 +288,7 @@ function drawContactSheet(ctx: CanvasRenderingContext2D, source: HTMLCanvasEleme
   ctx.fillText("CONTACT SHEET     01 / 03", pad, h - Math.max(3, pad * 0.2));
 }
 
-function drawLcd(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number) {
+function drawLcd(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number, position: FramePosition) {
   const pad = Math.round(Math.min(w, h) * 0.055);
   const top = Math.round(h * 0.11);
   const bottom = Math.round(h * 0.13);
@@ -280,7 +313,7 @@ function drawLcd(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: nu
   const imageH = h - imageY - bottom - pad;
   ctx.fillStyle = "#000000";
   ctx.fillRect(pad, imageY, w - pad * 2, imageH);
-  drawContain(ctx, source, pad, imageY, w - pad * 2, imageH);
+  drawFramedPhoto(ctx, source, pad, imageY, w - pad * 2, imageH, position);
 
   ctx.fillStyle = "#252d2e";
   ctx.fillRect(pad, h - bottom, w - pad * 2, bottom - pad);
@@ -294,8 +327,8 @@ function drawLcd(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: nu
 }
 
 
-function drawDateStamp(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number) {
-  ctx.drawImage(source, 0, 0, w, h);
+function drawDateStamp(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number, position: FramePosition) {
+  drawFramedPhoto(ctx, source, 0, 0, w, h, position);
   const margin = Math.max(6, Math.round(Math.min(w, h) * 0.045));
   const boxHeight = Math.max(13, Math.round(h * 0.095));
   const boxWidth = Math.min(w - margin * 2, Math.max(92, Math.round(w * 0.44)));
@@ -312,7 +345,7 @@ function drawDateStamp(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement,
   ctx.textAlign = "start";
 }
 
-function drawMiniDV(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number) {
+function drawMiniDV(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number, position: FramePosition) {
   const pad = Math.max(4, Math.round(Math.min(w, h) * 0.035));
   const top = Math.max(14, Math.round(h * 0.14));
   const bottom = Math.max(12, Math.round(h * 0.12));
@@ -324,7 +357,7 @@ function drawMiniDV(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w:
   const imageH = h - imageY - bottom - pad;
   ctx.fillStyle = "#080a0a";
   ctx.fillRect(pad, imageY, w - pad * 2, imageH);
-  drawContain(ctx, source, pad, imageY, w - pad * 2, imageH);
+  drawFramedPhoto(ctx, source, pad, imageY, w - pad * 2, imageH, position);
 
   const dot = Math.max(3, Math.round(top * 0.16));
   ctx.fillStyle = "#e23d35";
@@ -346,7 +379,7 @@ function drawMiniDV(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w:
   ctx.textAlign = "start";
 }
 
-function drawGalleryMat(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number) {
+function drawGalleryMat(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number, position: FramePosition) {
   const side = Math.round(Math.min(w, h) * 0.085);
   const top = Math.round(Math.min(w, h) * 0.07);
   const bottom = Math.round(Math.min(w, h) * 0.2);
@@ -356,7 +389,7 @@ function drawGalleryMat(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement
   ctx.fillRect(side, top, w - side * 2, h - top - bottom);
   ctx.fillStyle = "#d1cdc2";
   ctx.fillRect(side, top, w - side * 2, h - top - bottom);
-  drawContain(ctx, source, side, top, w - side * 2, h - top - bottom);
+  drawFramedPhoto(ctx, source, side, top, w - side * 2, h - top - bottom, position);
   ctx.strokeStyle = "#c9c4b8";
   ctx.lineWidth = Math.max(1, Math.min(w, h) * 0.002);
   ctx.strokeRect(side + 0.5, top + 0.5, w - side * 2 - 1, h - top - bottom - 1);
@@ -370,7 +403,7 @@ function drawGalleryMat(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement
   ctx.textAlign = "start";
 }
 
-function drawCollage(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number) {
+function drawCollage(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w: number, h: number, position: FramePosition) {
   const border = Math.max(8, Math.round(Math.min(w, h) * 0.055));
   const bottom = Math.max(border, Math.round(border * 1.65));
   ctx.fillStyle = "#f2f0e8";
@@ -379,7 +412,7 @@ function drawCollage(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w
   ctx.shadowColor = "rgba(0,0,0,0.16)";
   ctx.shadowBlur = Math.max(2, Math.round(border * 0.12));
   ctx.shadowOffsetY = Math.max(1, Math.round(border * 0.04));
-  drawContain(ctx, source, border, border, w - border * 2, h - border - bottom);
+  drawFramedPhoto(ctx, source, border, border, w - border * 2, h - border - bottom, position);
   ctx.restore();
   ctx.strokeStyle = "#c9c6bc";
   ctx.lineWidth = 1;
@@ -407,7 +440,11 @@ function drawCollage(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement, w
   ctx.restore();
 }
 
-export function applyFrame(canvas: HTMLCanvasElement, frame: FrameMode): void {
+export function applyFrame(
+  canvas: HTMLCanvasElement,
+  frame: FrameMode,
+  position: FramePosition = DEFAULT_FRAME_POSITION,
+): void {
   if (frame === "none") return;
   const w = canvas.width;
   const h = canvas.height;
@@ -430,31 +467,31 @@ export function applyFrame(canvas: HTMLCanvasElement, frame: FrameMode): void {
 
     switch (frame) {
       case "windows-98":
-        drawWindows98(ctx, source, w, h);
+        drawWindows98(ctx, source, w, h, position);
         break;
       case "polaroid":
-        drawPolaroid(ctx, source, w, h);
+        drawPolaroid(ctx, source, w, h, position);
         break;
       case "film-strip":
-        drawFilmStrip(ctx, source, w, h);
+        drawFilmStrip(ctx, source, w, h, position);
         break;
       case "contact-sheet":
-        drawContactSheet(ctx, source, w, h);
+        drawContactSheet(ctx, source, w, h, position);
         break;
       case "lcd-playback":
-        drawLcd(ctx, source, w, h);
+        drawLcd(ctx, source, w, h, position);
         break;
       case "collage":
-        drawCollage(ctx, source, w, h);
+        drawCollage(ctx, source, w, h, position);
         break;
       case "date-stamp":
-        drawDateStamp(ctx, source, w, h);
+        drawDateStamp(ctx, source, w, h, position);
         break;
       case "mini-dv":
-        drawMiniDV(ctx, source, w, h);
+        drawMiniDV(ctx, source, w, h, position);
         break;
       case "gallery-mat":
-        drawGalleryMat(ctx, source, w, h);
+        drawGalleryMat(ctx, source, w, h, position);
         break;
     }
   } finally {
