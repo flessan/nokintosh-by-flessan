@@ -206,6 +206,7 @@ export default function App() {
       t instanceof HTMLElement &&
       (/^(INPUT|SELECT|TEXTAREA|BUTTON|A)$/.test(t.tagName) || t.isContentEditable);
     const onKeyDown = (e: KeyboardEvent) => {
+      if (windowHidden) return;
       const mod = e.ctrlKey || e.metaKey;
       if (mod && e.key.toLowerCase() === "o") {
         e.preventDefault();
@@ -239,7 +240,7 @@ export default function App() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [editor, pickFile, quickExport]);
+  }, [editor, pickFile, quickExport, windowHidden]);
 
   // ---------- menus ----------
   const menus: Menu[] = useMemo(

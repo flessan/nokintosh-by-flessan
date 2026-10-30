@@ -169,8 +169,12 @@ src/
   state/
     useEditor.ts          document state, Apply, Undo/Redo
     usePreview.ts         renderer lifecycle, preview sizing, cache
+    useSavedLooks.ts      browser-local saved look library + JSON import
   ui/
-    App-facing Windows-style controls and panels
+    App.tsx               main Windows-style editor shell
+    SavedLooksPanel.tsx   save, load, import and export camera looks
+    WindowControls.tsx    classic minimize / maximize / close controls
+    Other files           preview, menus, effects, export and preset panels
 ```
 
 The engine layer does not import React UI code.
