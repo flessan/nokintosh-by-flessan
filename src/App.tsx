@@ -27,7 +27,7 @@ const REPO_URL = "https://github.com/flessan/nokintosh-by-flessan";
 
 export default function App() {
   const editor = useEditor();
-  const { looks, saveLook, deleteLook } = useSavedLooks();
+  const { looks, saveLook, deleteLook, importLooks } = useSavedLooks();
   const [windowHidden, setWindowHidden] = useState(false);
   const [windowMaximized, setWindowMaximized] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
@@ -373,15 +373,16 @@ export default function App() {
         onSave={saveCurrentLook}
         onApply={editor.applySavedLook}
         onDelete={deleteLook}
+        onImport={importLooks}
       />
       <GroupBox label="Presets">
-      <PresetList
-        presetId={presetId}
-        specialEffect={specialEffect}
-        onPick={editor.applyPreset}
-        onChooseSpecialEffect={editor.chooseSpecialEffect}
-        onHint={setHint}
-      />
+        <PresetList
+          presetId={presetId}
+          specialEffect={specialEffect}
+          onPick={editor.applyPreset}
+          onChooseSpecialEffect={editor.chooseSpecialEffect}
+          onHint={setHint}
+        />
       </GroupBox>
     </>
   );

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import type { SavedLook } from "../state/useSavedLooks";
 
 export function SavedLooksPanel({
@@ -7,14 +7,18 @@ export function SavedLooksPanel({
   onSave,
   onApply,
   onDelete,
+  onImport,
 }: {
   looks: SavedLook[];
   canSave: boolean;
   onSave: (name: string) => void;
   onApply: (look: SavedLook) => void;
   onDelete: (id: string) => void;
+  onImport: (values: unknown[]) => number;
 }) {
   const [name, setName] = useState("");
+  const [importMessage, setImportMessage] = useState("");
+  const importRef = useRef<HTMLInputElement | null>(null);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -22,6 +26,47 @@ export function SavedLooksPanel({
     if (!trimmed || !canSave) return;
     onSave(trimmed);
     setName("");
+  };
+
+  const exportLooks = () => {
+    if (!looks.length) return;
+    const blob = new Blob([JSON.stringify({ version: 1, looks }, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "nokintosh-camera-looks.json";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+    setImportMessage("Camera looks exported.");
+  };
+
+  const importFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    try {
+      const parsed: unknown = JSON.parse(await file.text());
+      const values = Array.isArray(parsed)
+        ? parsed
+        : parsed && typeof parsed === "object" && Array.isArray((parsed as { looks?: unknown }).looks)
+          ? (parsed as { looks: unknown[] }).looks
+          : [];
+      const count = onImport(values);
+      setImportMessage(
+        count
+          ? `Imported ${count} camera look${count === 1 ? "" : "s"}.`
+          : "No valid looks imported, or the local library is full.",
+      );
+    } catch {
+      setImportMessage("Could not read that looks file.");
+    } finally {
+      input.value = "";
+    }
   };
 
   return (
@@ -52,9 +97,40 @@ export function SavedLooksPanel({
         </button>
       </form>
 
+      <div className="mt-1 flex gap-[3px]">
+        <button
+          type="button"
+          className="ui-btn min-h-[23px] flex-1 px-2 text-[10px]"
+          onClick={() => importRef.current?.click()}
+          disabled={looks.length >= 24}
+        >
+          Import
+        </button>
+        <button
+          type="button"
+          className="ui-btn min-h-[23px] flex-1 px-2 text-[10px]"
+          onClick={exportLooks}
+          disabled={!looks.length}
+        >
+          Export
+        </button>
+      </div>
+      <input
+        ref={importRef}
+        type="file"
+        accept=".json,application/json"
+        className="sr-only"
+        onChange={(event) => void importFile(event)}
+      />
+
       <p className="mt-1 px-[2px] text-[10px] text-[color:var(--ink-dim)]">
-        Stored only in this browser.
+        Stored only in this browser. Import/export uses JSON.
       </p>
+      {importMessage && (
+        <p className="mt-1 px-[2px] text-[10px] text-[color:var(--ink-dim)]" role="status">
+          {importMessage}
+        </p>
+      )}
 
       <div className="mt-1 space-y-[2px]" role="list" aria-label="Saved camera looks">
         {looks.length === 0 ? (

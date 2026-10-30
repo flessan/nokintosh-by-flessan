@@ -37,7 +37,8 @@ color-science replication.
 Save your own effect combinations with a name and reuse them later. Saved looks
 include the complete camera settings, filter, collage frame, image transforms,
 and Blur / Pixelate configuration. They are stored locally in the current
-browser (up to 24 looks) and never uploaded.
+browser (up to 24 looks) and never uploaded. Use **Import** and **Export**
+to move or back up a collection as a JSON file.
 
 ### Core controls
 

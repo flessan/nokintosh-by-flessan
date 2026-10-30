@@ -20,18 +20,60 @@ export interface SavedLook {
 
 const STORAGE_KEY = "nokintosh:saved-looks:v1";
 const MAX_SAVED_LOOKS = 24;
+const FILTERS = new Set<FilterMode>([
+  "none",
+  "bw",
+  "sepia",
+  "negative",
+  "warm",
+  "cool",
+  "high-contrast",
+]);
+
+function createId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
 
 function isSavedLook(value: unknown): value is SavedLook {
   if (!value || typeof value !== "object") return false;
   const item = value as Record<string, unknown>;
+  const params = item.params as Record<string, unknown> | null;
+  const transform = item.transform as Record<string, unknown> | null;
+  const effect = item.specialEffect as Record<string, unknown> | null;
+  const strokes = effect?.strokes;
+
   return (
     typeof item.id === "string" &&
     typeof item.name === "string" &&
-    !!item.params && typeof item.params === "object" &&
+    !!item.name.trim() &&
+    typeof item.createdAt === "string" &&
+    !!params &&
+    ["grain", "jpeg", "colorShift", "vignette", "softness", "sharpen", "bloom", "aberration", "fade", "flash", "temperature", "exposure", "contrast", "saturation"]
+      .every((key) => typeof params[key] === "number" && Number.isFinite(params[key])) &&
     typeof item.filter === "string" &&
-    typeof item.frame === "string" &&
-    !!item.transform && typeof item.transform === "object" &&
-    !!item.specialEffect && typeof item.specialEffect === "object"
+    FILTERS.has(item.filter as FilterMode) &&
+    (item.frame === "none" || item.frame === "collage") &&
+    !!transform &&
+    typeof transform.mirror === "boolean" &&
+    typeof transform.flipVertical === "boolean" &&
+    !!effect &&
+    (effect.kind === "none" || effect.kind === "gaussian-blur" || effect.kind === "pixelate") &&
+    (effect.mode === "uniform" || effect.mode === "vignette" || effect.mode === "draw") &&
+    typeof effect.amount === "number" &&
+    typeof effect.brushSize === "number" &&
+    Array.isArray(strokes) &&
+    strokes.every((stroke) => {
+      if (!stroke || typeof stroke !== "object") return false;
+      const points = (stroke as Record<string, unknown>).points;
+      return Array.isArray(points) && points.every((point) => {
+        if (!point || typeof point !== "object") return false;
+        const coordinates = point as Record<string, unknown>;
+        return typeof coordinates.x === "number" && Number.isFinite(coordinates.x) &&
+          typeof coordinates.y === "number" && Number.isFinite(coordinates.y);
+      });
+    })
   );
 }
 
@@ -76,9 +118,7 @@ export function useSavedLooks() {
   const saveLook = useCallback((look: Omit<SavedLook, "id" | "createdAt">) => {
     const next: SavedLook = {
       ...cloneLook(look),
-      id: typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      id: createId(),
       createdAt: new Date().toISOString(),
     };
     setLooks((current) => [next, ...current].slice(0, MAX_SAVED_LOOKS));
@@ -89,5 +129,21 @@ export function useSavedLooks() {
     setLooks((current) => current.filter((look) => look.id !== id));
   }, []);
 
-  return { looks, saveLook, deleteLook };
+  const importLooks = useCallback((values: unknown[]) => {
+    const capacity = Math.max(0, MAX_SAVED_LOOKS - looks.length);
+    const imported = values
+      .filter(isSavedLook)
+      .slice(0, capacity)
+      .map((look) => ({
+        ...cloneLook(look),
+        id: createId(),
+        createdAt: new Date().toISOString(),
+      }));
+    if (imported.length) {
+      setLooks((current) => [...imported, ...current].slice(0, MAX_SAVED_LOOKS));
+    }
+    return imported.length;
+  }, [looks.length]);
+
+  return { looks, saveLook, deleteLook, importLooks };
 }
