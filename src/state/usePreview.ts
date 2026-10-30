@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { LoadedPhoto } from "../engine/image";
-import { applyFrame } from "../engine/frame";
+import { applyFrame, isFrameAssetReady, preloadFrameAsset } from "../engine/frame";
 import { applyCanvasTransform, type ImageTransform } from "../engine/transform";
 import { createRenderer, type Renderer } from "../engine/renderer";
 import type {
@@ -92,6 +92,7 @@ export function usePreview(
   const filterRef = useRef(filter);
   const frameRef = useRef(frame);
   const framePositionRef = useRef(framePosition);
+  const compositionRef = useRef({ frame, zoom: framePosition.zoom, x: framePosition.x, y: framePosition.y });
   const transformRef = useRef(transform);
   const specialEffectRef = useRef(specialEffect);
 
@@ -280,7 +281,7 @@ export function usePreview(
     return size;
   }
 
-  function renderFiltered(serial: number) {
+  async function renderFiltered(serial: number) {
     renderFrameRef.current = null;
     if (serial !== renderSerialRef.current) return;
 
@@ -290,6 +291,8 @@ export function usePreview(
 
     const bw = canvas.width;
     const bh = canvas.height;
+    await preloadFrameAsset(frameRef.current).catch(() => undefined);
+    if (serial !== renderSerialRef.current) return;
     const key = cacheKey(bw, bh);
 
     if (key) {
@@ -367,30 +370,64 @@ export function usePreview(
       if (originalRef.current) return;
 
       const serial = renderSerialRef.current;
-      renderFrameRef.current = requestAnimationFrame(() => renderFiltered(serial));
+      renderFrameRef.current = requestAnimationFrame(() => { void renderFiltered(serial); });
     });
   }
+
+  function recomposeCachedBase() {
+    const canvas = canvasRef.current;
+    if (!canvas || !photo || originalRef.current) return false;
+    const bw = canvas.width;
+    const bh = canvas.height;
+    if (bw < 1 || bh < 1 || !isFrameAssetReady(frameRef.current)) return false;
+
+    const base = baseCacheRef.current.get(photo);
+    const key = baseRenderKey(bw, bh);
+    if (!base || base.key !== key || base.width !== bw || base.height !== bh) return false;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return false;
+
+    try {
+      ctx.putImageData(base.data, 0, 0);
+      applyCanvasTransform(canvas, transformRef.current);
+      applySpecialEffect(canvas, specialEffectRef.current);
+      applyFrame(canvas, frameRef.current, framePositionRef.current);
+      const frameKey = cacheKey(bw, bh);
+      if (frameKey) storeCachedFrame(frameKey, bw, bh, ctx.getImageData(0, 0, bw, bh));
+      return true;
+    } catch (error) {
+      console.error("Nokintosh live frame composition failed:", error);
+      return false;
+    }
+  }
+
+  useLayoutEffect(() => {
+    const previous = compositionRef.current;
+    const next = { frame, zoom: framePosition.zoom, x: framePosition.x, y: framePosition.y };
+    compositionRef.current = next;
+    if (
+      previous.frame === next.frame &&
+      previous.zoom === next.zoom &&
+      previous.x === next.x &&
+      previous.y === next.y
+    ) return;
+    if (!photo || originalRef.current) return;
+    if (!recomposeCachedBase()) schedule();
+  }, [frame, framePosition.zoom, framePosition.x, framePosition.y]);
 
   useEffect(() => {
     schedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     params,
-    presetId,
     filter,
-    frame,
-    framePosition.zoom,
-    framePosition.x,
-    framePosition.y,
     transform.mirror,
     specialEffect,
-
     transform.flipVertical,
     box.w,
     box.h,
     showOriginal,
     photo,
-    cacheCustom,
   ]);
 
   useEffect(() => {

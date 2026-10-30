@@ -1,4 +1,50 @@
 import type { FrameMode, FramePosition } from "./types";
+import { FRAME_ARTWORK } from "./frameArtwork";
+
+type ImageFrameMode = Exclude<FrameMode, "none">;
+const frameAssetImages = new Map<ImageFrameMode, HTMLImageElement>();
+const frameAssetLoads = new Map<ImageFrameMode, Promise<void>>();
+
+export function isFrameAssetReady(frame: FrameMode): boolean {
+  return frame === "none" || frameAssetImages.has(frame as ImageFrameMode);
+}
+
+export function preloadFrameAsset(frame: FrameMode): Promise<void> {
+  if (frame === "none") return Promise.resolve();
+  const mode = frame as ImageFrameMode;
+  const cached = frameAssetImages.get(mode);
+  if (cached?.complete && cached.naturalWidth > 0) return Promise.resolve();
+  const pending = frameAssetLoads.get(mode);
+  if (pending) return pending;
+  const svg = FRAME_ARTWORK[frame];
+  if (!svg) return Promise.resolve();
+
+  const image = new Image();
+  const objectUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+  const load = new Promise<void>((resolve, reject) => {
+    image.onload = () => {
+      frameAssetImages.set(mode, image);
+      frameAssetLoads.delete(mode);
+      URL.revokeObjectURL(objectUrl);
+      resolve();
+    };
+    image.onerror = () => {
+      frameAssetLoads.delete(mode);
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Could not load frame image: " + mode));
+    };
+    image.src = objectUrl;
+  });
+  frameAssetLoads.set(mode, load);
+  return load;
+}
+
+function drawFrameAsset(ctx: CanvasRenderingContext2D, frame: FrameMode, width: number, height: number) {
+  if (frame === "none") return;
+  const image = frameAssetImages.get(frame as ImageFrameMode);
+  if (image?.complete && image.naturalWidth > 0) ctx.drawImage(image, 0, 0, width, height);
+}
+
 
 export const DEFAULT_FRAME_POSITION: FramePosition = {
   zoom: 1,
@@ -494,6 +540,7 @@ export function applyFrame(
         drawGalleryMat(ctx, source, w, h, position);
         break;
     }
+    drawFrameAsset(ctx, frame, w, h);
   } finally {
     ctx.restore();
     source.width = 0;

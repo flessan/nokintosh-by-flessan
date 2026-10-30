@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { applyFrame, FRAME_OPTIONS } from "../engine/frame";
+import { applyFrame, FRAME_OPTIONS, preloadFrameAsset } from "../engine/frame";
 import type { LoadedPhoto } from "../engine/image";
 import type { FrameMode, FramePosition } from "../engine/types";
 import { DEFAULT_FRAME_POSITION, normalizeFramePosition } from "../engine/frame";
@@ -53,62 +53,43 @@ function drawPhotoContain(
   );
 }
 
-function FrameThumbnail({
-  photo,
-  frame,
-  position,
-}: {
-  photo: LoadedPhoto | null;
-  frame: FrameMode;
-  position: FramePosition;
-}) {
+function FrameThumbnail({ photo, frame }: { photo: LoadedPhoto | null; frame: FrameMode }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const source = photo?.preview as HTMLCanvasElement | undefined;
-    // Keep the source photo's orientation while fitting the card proof inside
-    // a fixed preview box. Portrait frames stay portrait instead of being
-    // letterboxed into a forced landscape canvas.
-    const sourceWidth = source?.width ?? THUMBNAIL_WIDTH;
-    const sourceHeight = source?.height ?? THUMBNAIL_HEIGHT;
-    const scale = Math.min(THUMBNAIL_WIDTH / sourceWidth, THUMBNAIL_HEIGHT / sourceHeight);
-    const width = Math.max(1, Math.round(sourceWidth * scale));
-    const height = Math.max(1, Math.round(sourceHeight * scale));
-    canvas.width = width;
-    canvas.height = height;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "#c9d8d3";
-    ctx.fillRect(0, 0, width, height);
-
-    if (source) {
-      drawPhotoContain(ctx, source, width, height);
-    } else {
-      drawSample(ctx, width, height);
-    }
-
-    try {
-      applyFrame(canvas, frame, position);
-    } catch {
-      // A single decorative preview must never break the whole Frames tab.
-      // Restore the source image as a safe fallback if a frame renderer fails.
-      const fallback = canvas.getContext("2d");
-      if (!fallback) return;
-      fallback.setTransform(1, 0, 0, 1, 0, 0);
-      fallback.clearRect(0, 0, width, height);
-      if (source) {
-        drawPhotoContain(fallback, source, width, height);
-      } else {
-        drawSample(fallback, width, height);
+    let cancelled = false;
+    const renderThumbnail = async () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      try { await preloadFrameAsset(frame); } catch {}
+      if (cancelled || canvasRef.current !== canvas) return;
+      const source = photo?.preview as HTMLCanvasElement | undefined;
+      const sourceWidth = source?.width ?? THUMBNAIL_WIDTH;
+      const sourceHeight = source?.height ?? THUMBNAIL_HEIGHT;
+      const scale = Math.min(THUMBNAIL_WIDTH / sourceWidth, THUMBNAIL_HEIGHT / sourceHeight);
+      const width = Math.max(1, Math.round(sourceWidth * scale));
+      const height = Math.max(1, Math.round(sourceHeight * scale));
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#c9d8d3";
+      ctx.fillRect(0, 0, width, height);
+      if (source) drawPhotoContain(ctx, source, width, height);
+      else drawSample(ctx, width, height);
+      try {
+        applyFrame(canvas, frame, DEFAULT_FRAME_POSITION);
+      } catch {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+        if (source) drawPhotoContain(ctx, source, width, height);
+        else drawSample(ctx, width, height);
       }
-    }
-  }, [photo?.preview, frame, position.zoom, position.x, position.y]);
+    };
+    void renderThumbnail();
+    return () => { cancelled = true; };
+  }, [photo?.preview, frame]);
 
   return <canvas ref={canvasRef} className="frame-card-preview" aria-hidden="true" />;
 }
@@ -142,71 +123,6 @@ export function FramePicker({ value, photo, position, onPick, onChangePosition }
       <div className="frame-gallery-intro">
         <span className="gallery-kicker">FINISHING TOUCH</span>
         <p>Frames are part of the photo and travel with your export.</p>
-      </div>
-
-      <div className="px-[2px]">
-        <label htmlFor="frame-search" className="sr-only">Search photo frames</label>
-        <input
-          id="frame-search"
-          type="search"
-          className="gallery-search bevel-sunken w-full bg-white px-2"
-          placeholder="Find a frame..."
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-      </div>
-
-      <div className="gallery-filter-tabs" role="tablist" aria-label="Frame families">
-        {(["all", "Desktop", "Print", "Camera"] as Family[]).map((id) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={family === id}
-            className="gallery-filter-tab"
-            data-active={family === id}
-            onClick={() => setFamily(id)}
-          >
-            {id === "all" ? "All" : id === "Print" ? "Prints" : id}
-          </button>
-        ))}
-      </div>
-
-      <div className="frame-gallery-grid" aria-live="polite">
-        {entries.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            className="frame-card"
-            data-selected={value === option.id}
-            aria-pressed={value === option.id}
-            onClick={() => onPick(option.id)}
-            title={option.note}
-          >
-            <span className="frame-card-stage">
-              <FrameThumbnail
-                photo={photo}
-                frame={option.id}
-                position={option.id === value ? position : DEFAULT_FRAME_POSITION}
-              />
-            </span>
-            <span className="frame-card-meta">
-              <span className="frame-card-label">{option.name}</span>
-              <span className="frame-card-family">{option.family}</span>
-            </span>
-            <span className="frame-card-note">{option.note}</span>
-          </button>
-        ))}
-
-        {entries.length === 0 && (
-          <p className="gallery-empty col-span-2">No frames match “{query}”.</p>
-        )}
-      </div>
-
-      <div className="gallery-selection" aria-live="polite">
-        <span className="gallery-kicker">CURRENT FRAME</span>
-        <strong>{selected?.name ?? "Original"}</strong>
-        <p>{selected?.note ?? "No additional border is applied."}</p>
       </div>
 
       <section className="frame-adjustments" aria-label="Frame photo placement">
@@ -248,6 +164,70 @@ export function FramePicker({ value, photo, position, onPick, onChangePosition }
           The photo stays clipped inside its frame, even while dragging.
         </p>
       </section>
+
+
+      <div className="px-[2px]">
+        <label htmlFor="frame-search" className="sr-only">Search photo frames</label>
+        <input
+          id="frame-search"
+          type="search"
+          className="gallery-search bevel-sunken w-full bg-white px-2"
+          placeholder="Find a frame..."
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </div>
+
+      <div className="gallery-filter-tabs" role="tablist" aria-label="Frame families">
+        {(["all", "Desktop", "Print", "Camera"] as Family[]).map((id) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={family === id}
+            className="gallery-filter-tab"
+            data-active={family === id}
+            onClick={() => setFamily(id)}
+          >
+            {id === "all" ? "All" : id === "Print" ? "Prints" : id}
+          </button>
+        ))}
+      </div>
+
+      <div className="frame-gallery-grid" aria-live="polite">
+        {entries.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            className="frame-card"
+            data-selected={value === option.id}
+            aria-pressed={value === option.id}
+            onClick={() => onPick(option.id)}
+            title={option.note}
+          >
+            <span className="frame-card-stage">
+              <FrameThumbnail photo={photo} frame={option.id} />
+            </span>
+            <span className="frame-card-meta">
+              <span className="frame-card-label">{option.name}</span>
+              <span className="frame-card-family">{option.family}</span>
+            </span>
+            <span className="frame-card-note">{option.note}</span>
+          </button>
+        ))}
+
+        {entries.length === 0 && (
+          <p className="gallery-empty col-span-2">No frames match “{query}”.</p>
+        )}
+      </div>
+
+      <div className="gallery-selection" aria-live="polite">
+        <span className="gallery-kicker">CURRENT FRAME</span>
+        <strong>{selected?.name ?? "Original"}</strong>
+        <p>{selected?.note ?? "No additional border is applied."}</p>
+      </div>
+
+
     </div>
   );
 }
