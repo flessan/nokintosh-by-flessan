@@ -264,6 +264,20 @@ export function EffectsPanel({
   const groups: ControlDef["group"][] = ["core", "optics", "tone"];
   return (
     <div>
+      <div className="sticky top-0 z-10 border-b border-[color:var(--shadow)] bg-[color:var(--face)] px-[5px] py-2">
+        <button
+          type="button"
+          className="ui-btn w-full min-h-[30px] font-bold"
+          disabled={disabled || !canApply}
+          onClick={onApply}
+        >
+          Apply changes
+        </button>
+        <div className="mt-1 text-center text-[10px] text-[color:var(--ink-dim)]">
+          Ctrl+Enter
+        </div>
+      </div>
+
       <SpecialEffectControls
         effect={specialEffect}
         onChoose={onChooseSpecialEffect}
@@ -300,19 +314,6 @@ export function EffectsPanel({
         </div>
       ))}
 
-      <div className="mt-2 border-t border-[color:var(--shadow)] px-[5px] pt-2">
-        <button
-          type="button"
-          className="ui-btn w-full font-bold"
-          disabled={disabled || !canApply}
-          onClick={onApply}
-        >
-          Apply
-        </button>
-        <div className="mt-1 text-center text-[10px] text-[color:var(--ink-dim)]">
-          Ctrl+Enter
-        </div>
-      </div>
     </div>
   );
 }
