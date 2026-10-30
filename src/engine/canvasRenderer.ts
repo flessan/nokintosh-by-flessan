@@ -435,8 +435,8 @@ export class CanvasRenderer implements Renderer {
     }
 
     // ---- named digital filter ----
-    // Applied after the camera character so the filter changes the final
-    // image appearance without pretending to be a physical sensor effect.
+    // Camera profiles and colour filters are separate layers: the former
+    // simulates sensor character, while these treatments shape the final tone.
     if (filter !== "none") {
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
@@ -444,65 +444,67 @@ export class CanvasRenderer implements Renderer {
           let r = d[i] / 255;
           let g = d[i + 1] / 255;
           let b = d[i + 2] / 255;
-
           const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          const shadows = 1 - smoothstep(lum, 0.08, 0.68);
+          const highlights = smoothstep(lum, 0.38, 0.94);
 
           if (filter === "bw") {
-            // A camera-style channel mix keeps skin and skies from collapsing
-            // into the same grey, then adds a gentle print-like S curve.
+            // Red-sensitive mono mix keeps skin lively while preserving sky detail.
             const mono = 0.27 * r + 0.62 * g + 0.11 * b;
-            const tone = clamp01((mono - 0.5) * 1.16 + 0.5);
-            r = g = b = tone;
+            const curve = clamp01((mono - 0.5) * 1.22 + 0.5);
+            r = g = b = curve;
           } else if (filter === "sepia") {
             const nr = 0.393 * r + 0.769 * g + 0.189 * b;
             const ng = 0.349 * r + 0.686 * g + 0.168 * b;
             const nb = 0.272 * r + 0.534 * g + 0.131 * b;
-            const mid = clamp01((lum - 0.5) * 1.08 + 0.5);
-            r = clamp01(nr * 0.92 + mid * 0.07);
-            g = clamp01(ng * 0.9 + mid * 0.035);
-            b = clamp01(nb * 0.84);
+            const tone = clamp01((lum - 0.5) * 1.12 + 0.5);
+            r = clamp01(nr * 0.88 + 0.09 * tone + 0.025);
+            g = clamp01(ng * 0.88 + 0.045 * tone + 0.012);
+            b = clamp01(nb * 0.8 + 0.008);
           } else if (filter === "negative") {
-            // A slightly uneven channel response makes the inversion feel
-            // closer to an in-camera negative effect than a flat CSS invert.
+            // Keep the inversion crisp but avoid a uniform RGB complement.
             r = Math.pow(1 - r, 0.94);
             g = Math.pow(1 - g, 0.98);
             b = Math.pow(1 - b, 1.04);
           } else if (filter === "warm") {
-            const shadow = 1 - smoothstep(lum, 0.08, 0.62);
-            const highlight = smoothstep(lum, 0.42, 0.92);
-            r = clamp01(r * 1.08 + 0.025 + highlight * 0.018);
-            g = clamp01(g * 1.015 + 0.006);
-            b = clamp01(b * (0.94 - shadow * 0.025) - highlight * 0.006);
+            // Warmth is concentrated in the mid/high range; shadows stay neutral.
+            r = clamp01(r * (1.035 + highlights * 0.045) + 0.008);
+            g = clamp01(g * 1.012 + highlights * 0.006);
+            b = clamp01(b * (0.985 - highlights * 0.065) - shadows * 0.004);
           } else if (filter === "cool") {
-            const shadow = 1 - smoothstep(lum, 0.08, 0.72);
-            const highlight = smoothstep(lum, 0.48, 0.94);
-            r = clamp01(r * 0.94 - shadow * 0.01 + highlight * 0.01);
-            g = clamp01(g * 1.005 + 0.004);
-            b = clamp01(b * (1.08 + shadow * 0.025) + 0.012);
+            // Blue/cyan shadow bias with highlights brought back towards neutral.
+            r = clamp01(r * (0.97 + highlights * 0.018) - shadows * 0.008);
+            g = clamp01(g * 1.005 + shadows * 0.004);
+            b = clamp01(b * (1.045 + shadows * 0.04 - highlights * 0.015) + 0.006);
           } else if (filter === "high-contrast") {
-            const curve = (v: number) => clamp01(v < 0.5
-              ? 0.5 * Math.pow(v * 2, 1.18)
-              : 1 - 0.5 * Math.pow((1 - v) * 2, 1.18));
+            const curve = (v: number) => clamp01(
+              v < 0.5
+                ? 0.5 * Math.pow(v * 2, 1.32)
+                : 1 - 0.5 * Math.pow((1 - v) * 2, 1.32),
+            );
             r = curve(r);
             g = curve(g);
             b = curve(b);
           } else if (filter === "cross-process") {
-            const shadow = 1 - smoothstep(lum, 0.12, 0.78);
-            const highlight = smoothstep(lum, 0.38, 0.92);
-            r = clamp01(r * (1.02 + highlight * 0.12) - shadow * 0.025);
-            g = clamp01(g * (1.015 + highlight * 0.025) + shadow * 0.015);
-            b = clamp01(b * (1.08 + shadow * 0.1) - highlight * 0.045);
+            // Cyan shadow separation and amber highlights; the green channel
+            // bridges the two so the result remains readable on skin.
+            r = clamp01(r * (1.015 + highlights * 0.13) - shadows * 0.028);
+            g = clamp01(g * (1.015 + highlights * 0.025) + shadows * 0.014);
+            b = clamp01(b * (1.055 + shadows * 0.11) - highlights * 0.048);
           } else if (filter === "chrome") {
-            const vibrance = 1.12 + (1 - Math.min(1, Math.abs(lum - 0.5) * 2)) * 0.1;
-            const mid = (lum - 0.5) * 1.2 + 0.5;
-            r = clamp01(mid + (r - lum) * vibrance + 0.006);
-            g = clamp01(mid + (g - lum) * vibrance);
-            b = clamp01(mid + (b - lum) * vibrance + 0.012);
+            // Saturate midtones first, then add a compact-camera S-curve.
+            const vibrance = 1.16 + (1 - Math.min(1, Math.abs(lum - 0.5) * 2)) * 0.12;
+            const tone = (v: number) => clamp01((v - 0.5) * 1.12 + 0.5);
+            const base = tone(lum);
+            r = clamp01(base + (r - lum) * vibrance + 0.004);
+            g = clamp01(base + (g - lum) * vibrance);
+            b = clamp01(base + (b - lum) * vibrance + 0.01);
           } else if (filter === "soft-flash") {
-            const shoulder = (v: number) => v / (1 + Math.max(0, v - 0.55) * 0.75);
-            r = clamp01(shoulder(r * 1.06 + 0.025) * 1.015);
-            g = clamp01(shoulder(g * 1.04 + 0.02));
-            b = clamp01(shoulder(b * 1.01 + 0.018) * 0.98);
+            // Lifted midtones and a shoulder preserve highlight detail after flash.
+            const shoulder = (v: number) => v / (1 + Math.max(0, v - 0.52) * 0.9);
+            r = clamp01(shoulder(r * 1.065 + 0.024) * 1.018);
+            g = clamp01(shoulder(g * 1.045 + 0.02));
+            b = clamp01(shoulder(b * 1.02 + 0.018) * 0.985);
           }
 
           d[i] = Math.round(r * 255);

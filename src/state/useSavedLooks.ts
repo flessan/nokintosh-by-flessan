@@ -40,6 +40,9 @@ const FRAMES = new Set([
   "film-strip",
   "contact-sheet",
   "lcd-playback",
+  "date-stamp",
+  "mini-dv",
+  "gallery-mat",
 ]);
 
 function createId(): string {

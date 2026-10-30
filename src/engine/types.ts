@@ -59,7 +59,10 @@ export type FrameMode =
   | "polaroid"
   | "film-strip"
   | "contact-sheet"
-  | "lcd-playback";
+  | "lcd-playback"
+  | "date-stamp"
+  | "mini-dv"
+  | "gallery-mat";
 
 export type SpecialEffectKind = "none" | "gaussian-blur" | "pixelate";
 export type SpecialEffectMode = "uniform" | "vignette" | "draw";
