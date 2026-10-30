@@ -1,5 +1,5 @@
 import { createRenderer, fitWithin, type ImageSource } from "./renderer";
-import { DEFAULT_SPECIAL_EFFECT, type EffectParams, type FilterMode } from "./types";
+import { DEFAULT_SPECIAL_EFFECT, type EffectParams, type FilterMode, type FrameMode } from "./types";
 import { applyFrame } from "./frame";
 import { applyCanvasTransform, IDENTITY_TRANSFORM, type ImageTransform } from "./transform";
 import { applySpecialEffect } from "./specialEffect";
@@ -77,7 +77,7 @@ export async function exportImage(
   options: ExportOptions,
   filter: FilterMode = "none",
   transform: ImageTransform = IDENTITY_TRANSFORM,
-  frame: "none" | "collage" = "none",
+  frame: FrameMode = "none",
   specialEffect: SpecialEffectState = DEFAULT_SPECIAL_EFFECT,
 ): Promise<ExportResult> {
   const canvas = document.createElement("canvas");
