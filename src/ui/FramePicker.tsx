@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { applyFrame, FRAME_OPTIONS } from "../engine/frame";
 import type { LoadedPhoto } from "../engine/image";
-import type { FrameMode } from "../engine/types";
+import type { FrameMode, FramePosition } from "../engine/types";
+import { DEFAULT_FRAME_POSITION, normalizeFramePosition } from "../engine/frame";
 
 type Family = "all" | "Desktop" | "Print" | "Camera";
 
@@ -52,7 +53,15 @@ function drawPhotoContain(
   );
 }
 
-function FrameThumbnail({ photo, frame }: { photo: LoadedPhoto | null; frame: FrameMode }) {
+function FrameThumbnail({
+  photo,
+  frame,
+  position,
+}: {
+  photo: LoadedPhoto | null;
+  frame: FrameMode;
+  position: FramePosition;
+}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -80,7 +89,7 @@ function FrameThumbnail({ photo, frame }: { photo: LoadedPhoto | null; frame: Fr
     }
 
     try {
-      applyFrame(canvas, frame);
+      applyFrame(canvas, frame, position);
     } catch {
       // A single decorative preview must never break the whole Frames tab.
       // Restore the source image as a safe fallback if a frame renderer fails.
@@ -94,15 +103,17 @@ function FrameThumbnail({ photo, frame }: { photo: LoadedPhoto | null; frame: Fr
         drawSample(fallback, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
       }
     }
-  }, [photo?.preview, frame]);
+  }, [photo?.preview, frame, position.zoom, position.x, position.y]);
 
   return <canvas ref={canvasRef} className="frame-card-preview" aria-hidden="true" />;
 }
 
-export function FramePicker({ value, photo, onPick }: {
+export function FramePicker({ value, photo, position, onPick, onChangePosition }: {
   value: FrameMode;
   photo: LoadedPhoto | null;
+  position: FramePosition;
   onPick: (frame: FrameMode) => void;
+  onChangePosition: (position: FramePosition) => void;
 }) {
   const [family, setFamily] = useState<Family>("all");
   const [query, setQuery] = useState("");
@@ -168,7 +179,11 @@ export function FramePicker({ value, photo, onPick }: {
             title={option.note}
           >
             <span className="frame-card-stage">
-              <FrameThumbnail photo={photo} frame={option.id} />
+              <FrameThumbnail
+                photo={photo}
+                frame={option.id}
+                position={option.id === value ? position : DEFAULT_FRAME_POSITION}
+              />
             </span>
             <span className="frame-card-meta">
               <span className="frame-card-label">{option.name}</span>
@@ -188,6 +203,46 @@ export function FramePicker({ value, photo, onPick }: {
         <strong>{selected?.name ?? "Original"}</strong>
         <p>{selected?.note ?? "No additional border is applied."}</p>
       </div>
+
+      <section className="frame-adjustments" aria-label="Frame photo placement">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <span className="gallery-kicker">PHOTO PLACEMENT</span>
+            <strong className="block text-[11px]">Scale</strong>
+          </div>
+          <output className="frame-scale-value">{Math.round(position.zoom * 100)}%</output>
+        </div>
+        <input
+          aria-label="Photo scale inside frame"
+          className="ui-range mt-1"
+          type="range"
+          min="1"
+          max="4"
+          step="0.05"
+          value={position.zoom}
+          disabled={!photo || value === "none"}
+          onChange={(event) => onChangePosition(normalizeFramePosition({
+            ...position,
+            zoom: Number(event.target.value),
+          }))}
+        />
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <p className="frame-adjustment-hint">
+            Drag the photo in the main preview to reposition it.
+          </p>
+          <button
+            type="button"
+            className="ui-btn shrink-0 px-2"
+            disabled={!photo || value === "none" || (position.zoom === 1 && position.x === 0 && position.y === 0)}
+            onClick={() => onChangePosition({ ...DEFAULT_FRAME_POSITION })}
+          >
+            Reset
+          </button>
+        </div>
+        <p className="frame-adjustment-safety">
+          The photo stays clipped inside its frame, even while dragging.
+        </p>
+      </section>
     </div>
   );
 }
