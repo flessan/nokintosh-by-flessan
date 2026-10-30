@@ -25,6 +25,13 @@ interface CachedFrame {
   lastUsed: number;
 }
 
+interface CachedBaseFrame {
+  key: string;
+  width: number;
+  height: number;
+  data: ImageData;
+}
+
 interface PreviewInfo {
   engine: "webgl2" | "canvas2d" | "none";
   previewWidth: number;
@@ -91,6 +98,9 @@ export function usePreview(
   // WeakMap prevents cached pixels from keeping old photo objects alive after
   // a new photo is opened or the current photo is closed.
   const cacheRef = useRef(new WeakMap<LoadedPhoto, Map<string, CachedFrame>>());
+  // The last unframed camera/filter result lets frame dragging recompose pixels
+  // without rerunning the more expensive camera pipeline on every pointer move.
+  const baseCacheRef = useRef(new WeakMap<LoadedPhoto, CachedBaseFrame>());
 
   const [info, setInfo] = useState<PreviewInfo>({
     engine: "none",
@@ -194,6 +204,10 @@ export function usePreview(
     ].join("|");
   }
 
+  function baseRenderKey(bw: number, bh: number) {
+    return [bw, bh, filterRef.current, paramsKey(paramsRef.current)].join("|");
+  }
+
   function getCachedFrame(key: string, bw: number, bh: number): CachedFrame | null {
     if (!photo) return null;
     const map = cacheRef.current.get(photo);
@@ -292,7 +306,25 @@ export function usePreview(
 
     const t0 = performance.now();
     try {
-      r.render(paramsRef.current, filterRef.current);
+      const baseKey = baseRenderKey(bw, bh);
+      const base = baseCacheRef.current.get(photo);
+      if (base && base.key === baseKey && base.width === bw && base.height === bh) {
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Preview canvas context unavailable.");
+        ctx.putImageData(base.data, 0, 0);
+      } else {
+        r.render(paramsRef.current, filterRef.current);
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          baseCacheRef.current.set(photo, {
+            key: baseKey,
+            width: bw,
+            height: bh,
+            data: ctx.getImageData(0, 0, bw, bh),
+          });
+        }
+      }
+
       applyCanvasTransform(canvas, transformRef.current);
       applySpecialEffect(canvas, specialEffectRef.current);
       applyFrame(canvas, frameRef.current, framePositionRef.current);
